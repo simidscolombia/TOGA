@@ -4,6 +4,7 @@ import { SearchResult, NewsItem, AnalyzedDecision } from '../types';
 
 // Initialize the API client. 
 const apiKey = process.env.API_KEY || '';
+// Deployment fix trigger
 let ai: GoogleGenAI | null = null;
 
 if (apiKey) {
