@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Toga">
+
+  <!-- SEO & Open Graph -->
+  <title>Toga | Plataforma LegalTech para Abogados</title>
+  <meta name="description"
+    content="La herramienta todo en uno para abogados colombianos. Redacción IA, Gestión de Casos, Jurisprudencia y más.">
+  <meta property="og:title" content="Toga - Tu Despacho Jurídico con IA">
+  <meta property="og:description"
+    content="Redacta tutelas en segundos, gestiona tus casos y consulta jurisprudencia con inteligencia artificial.">
+  <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/3771/3771345.png">
+  <meta property="og:url" content="https://toga.legal">
+  <meta property="og:type" content="website">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="https://cdn-icons-png.flaticon.com/512/3771/3771345.png" />
+
+  <!-- Tailwind Configuration for Custom Animations -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'fade-in': 'fadeIn 0.2s ease-out',
+            'zoom-in': 'zoomIn 0.2s ease-out',
+            'slide-in-from-right': 'slideInRight 0.3s ease-out',
+            'slide-in-from-bottom': 'slideInBottom 0.3s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            zoomIn: {
+              '0%': { opacity: '0', transform: 'scale(0.95)' },
+              '100%': { opacity: '1', transform: 'scale(1)' },
+            },
+            slideInRight: {
+              '0%': { transform: 'translateX(100%)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            slideInBottom: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>
