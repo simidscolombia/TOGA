@@ -21,7 +21,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', size = 'md', className = '', isLoading, ...props }) => {
   const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
-  
+
   const sizes = {
     sm: "px-3 py-1.5 text-xs",
     md: "px-4 py-2 text-sm",
@@ -88,41 +88,41 @@ export const ToastNotification: React.FC<ToastProps> = ({ id, type, message, onC
 // --- Voice Recorder Component ---
 export const VoiceRecorder: React.FC<{ onResult: (text: string) => void; className?: string }> = ({ onResult, className }) => {
   const [isListening, setIsListening] = useState(false);
-  
+
   const handleListen = () => {
-    if (isListening) return; 
-    
+    if (isListening) return;
+
     // Safety check for browser support
     const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognitionCtor) {
       alert("Tu navegador no soporta dictado por voz. Intenta usar Chrome o Safari.");
       return;
     }
-    
+
     const recognition = new SpeechRecognitionCtor();
     recognition.lang = 'es-CO';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-    
+
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     recognition.onerror = (event) => {
-        console.error("Speech error", event);
-        setIsListening(false);
+      console.error("Speech error", event);
+      setIsListening(false);
     };
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       if (transcript) {
-          onResult(transcript);
+        onResult(transcript);
       }
     };
-    
+
     recognition.start();
   };
 
   return (
-    <button 
-      onClick={handleListen} 
+    <button
+      onClick={handleListen}
       type="button"
       className={`p-2 rounded-full transition-all duration-300 ${isListening ? 'bg-red-100 text-red-600 ring-2 ring-red-400 ring-offset-2 animate-pulse' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'} ${className}`}
       title={isListening ? "Escuchando..." : "Dictar por voz"}
@@ -142,14 +142,14 @@ export const WompiWidget: React.FC = () => {
     script.id = 'wompi-script';
     script.src = 'https://checkout.wompi.co/widget.js';
     script.async = true;
-    
+
     // Configuración del Widget con tu llave pública
     script.setAttribute('data-render', 'button');
-    script.setAttribute('data-public-key', 'pub_test_ilaiOTiwq8EPNZpkPbg26V3gu0hVV60q'); // LLAVE DEL USUARIO
+    script.setAttribute('data-public-key', (import.meta.env.VITE_WOMPI_PUBLIC_KEY as string) || 'pub_test_ilaiOTiwq8EPNZpkPbg26V3gu0hVV60q');
     script.setAttribute('data-currency', 'COP');
     script.setAttribute('data-amount-in-cents', '8900000'); // $89.000 COP
     script.setAttribute('data-reference', `toga-sub-${Date.now()}`); // Referencia única
-    
+
     // Url de redirección (vuelve a la app después de pagar)
     script.setAttribute('data-redirect-url', window.location.href);
 
@@ -162,7 +162,7 @@ export const WompiWidget: React.FC = () => {
 
   return (
     <div className="w-full flex justify-center py-2">
-       <form id="wompi-container"></form>
+      <form id="wompi-container"></form>
     </div>
   );
 };
@@ -239,12 +239,12 @@ export const MarkdownRenderer: React.FC<{ content: string; id?: string }> = ({ c
           );
         }
         if (/^\d+\.\s/.test(line)) {
-           return (
+          return (
             <div key={i} className="flex gap-3 ml-6">
-               <span className="font-bold text-slate-700 min-w-[20px]">{line.match(/^\d+\./)?.[0]}</span>
-               <p dangerouslySetInnerHTML={{ __html: formatInline(line.replace(/^\d+\.\s/, '')) }} />
+              <span className="font-bold text-slate-700 min-w-[20px]">{line.match(/^\d+\./)?.[0]}</span>
+              <p dangerouslySetInnerHTML={{ __html: formatInline(line.replace(/^\d+\.\s/, '')) }} />
             </div>
-           )
+          )
         }
         if (!line.trim()) return <div key={i} className="h-2" />;
         return <p key={i} dangerouslySetInnerHTML={{ __html: formatInline(line) }} />;
@@ -263,12 +263,12 @@ const formatInline = (text: string) => {
 const TogadoAvatar = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="2" dy="4" stdDeviation="4" floodOpacity="0.3"/>
+      <feDropShadow dx="2" dy="4" stdDeviation="4" floodOpacity="0.3" />
     </filter>
     <g filter="url(#shadow)">
       <circle cx="100" cy="100" r="90" fill="#4f46e5" />
-      <circle cx="100" cy="100" r="80" fill="url(#grad1)" fillOpacity="0.5"/>
-      <path d="M 30 30 L 60 70 L 90 90 Z" fill="#312e81" /> 
+      <circle cx="100" cy="100" r="80" fill="url(#grad1)" fillOpacity="0.5" />
+      <path d="M 30 30 L 60 70 L 90 90 Z" fill="#312e81" />
       <path d="M 170 30 L 140 70 L 110 90 Z" fill="#312e81" />
       <ellipse cx="70" cy="85" rx="35" ry="35" fill="#e0e7ff" />
       <ellipse cx="130" cy="85" rx="35" ry="35" fill="#e0e7ff" />
@@ -288,8 +288,8 @@ const TogadoAvatar = ({ className }: { className?: string }) => (
     </g>
     <defs>
       <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{stopColor:'rgb(99,102,241)', stopOpacity:1}} />
-        <stop offset="100%" style={{stopColor:'rgb(55,48,163)', stopOpacity:1}} />
+        <stop offset="0%" style={{ stopColor: 'rgb(99,102,241)', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: 'rgb(55,48,163)', stopOpacity: 1 }} />
       </linearGradient>
     </defs>
   </svg>
@@ -301,11 +301,11 @@ interface TogadoCompanionProps {
 }
 
 interface ChatMessage {
-    id: string;
-    role: 'user' | 'togado';
-    text?: string;
-    helpContext?: { title: string; description: string; tip?: string }; // Special card message
-    timestamp: Date;
+  id: string;
+  role: 'user' | 'togado';
+  text?: string;
+  helpContext?: { title: string; description: string; tip?: string }; // Special card message
+  timestamp: Date;
 }
 
 export const TogadoCompanion: React.FC<TogadoCompanionProps> = ({ knowledgeBase }) => {
@@ -315,116 +315,116 @@ export const TogadoCompanion: React.FC<TogadoCompanionProps> = ({ knowledgeBase 
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   // Ref for Long Press Timer
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initial welcome
   useEffect(() => {
     const timer = setTimeout(() => {
-        setMessages([{
-            id: 'welcome',
-            role: 'togado',
-            text: "¡Hola! Soy Togado. Haz doble clic en cualquier botón para ver qué hace, o escríbeme aquí si tienes dudas jurídicas.",
-            timestamp: new Date()
-        }]);
+      setMessages([{
+        id: 'welcome',
+        role: 'togado',
+        text: "¡Hola! Soy Togado. Haz doble clic en cualquier botón para ver qué hace, o escríbeme aquí si tienes dudas jurídicas.",
+        timestamp: new Date()
+      }]);
     }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
   // Auto-scroll
   useEffect(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isOpen]);
 
   const handleSendMessage = async () => {
-      if (!inputValue.trim()) return;
+    if (!inputValue.trim()) return;
 
-      const userMsg: ChatMessage = {
-          id: Date.now().toString(),
-          role: 'user',
-          text: inputValue,
-          timestamp: new Date()
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      text: inputValue,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    setInputValue('');
+    setIsTyping(true);
+
+    try {
+      const responseText = await askTogado(userMsg.text || '');
+      const aiMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'togado',
+        text: responseText,
+        timestamp: new Date()
       };
-      
-      setMessages(prev => [...prev, userMsg]);
-      setInputValue('');
-      setIsTyping(true);
-
-      try {
-          const responseText = await askTogado(userMsg.text || '');
-          const aiMsg: ChatMessage = {
-              id: (Date.now() + 1).toString(),
-              role: 'togado',
-              text: responseText,
-              timestamp: new Date()
-          };
-          setMessages(prev => [...prev, aiMsg]);
-      } catch (e) {
-          // Error handled in service, but just in case
-      } finally {
-          setIsTyping(false);
-      }
+      setMessages(prev => [...prev, aiMsg]);
+    } catch (e) {
+      // Error handled in service, but just in case
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          handleSendMessage();
-      }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   // --- Interaction Logic (Double Click & Long Press) ---
   useEffect(() => {
-    
-    const triggerHelp = (target: HTMLElement) => {
-        const helpId = target.getAttribute('data-toga-help');
-        if (helpId && knowledgeBase[helpId]) {
-          const data = knowledgeBase[helpId];
-          setHighlightRect(target.getBoundingClientRect());
-          setIsOpen(true);
-          
-          // Add specialized Help Card to chat
-          setMessages(prev => [...prev, {
-              id: Date.now().toString(),
-              role: 'togado',
-              helpContext: data,
-              timestamp: new Date()
-          }]);
 
-          // Remove Highlight after a few seconds
-          setTimeout(() => setHighlightRect(null), 4000);
-          
-          if (navigator.vibrate) navigator.vibrate(50);
-        } else {
-             setHighlightRect(null);
-        }
+    const triggerHelp = (target: HTMLElement) => {
+      const helpId = target.getAttribute('data-toga-help');
+      if (helpId && knowledgeBase[helpId]) {
+        const data = knowledgeBase[helpId];
+        setHighlightRect(target.getBoundingClientRect());
+        setIsOpen(true);
+
+        // Add specialized Help Card to chat
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'togado',
+          helpContext: data,
+          timestamp: new Date()
+        }]);
+
+        // Remove Highlight after a few seconds
+        setTimeout(() => setHighlightRect(null), 4000);
+
+        if (navigator.vibrate) navigator.vibrate(50);
+      } else {
+        setHighlightRect(null);
+      }
     };
 
     // 1. Double Click Handler
     const handleDoubleClick = (e: MouseEvent) => {
-        const target = (e.target as HTMLElement).closest('[data-toga-help]');
-        if (target) {
-            e.preventDefault(); 
-            e.stopPropagation();
-            triggerHelp(target as HTMLElement);
-        }
+      const target = (e.target as HTMLElement).closest('[data-toga-help]');
+      if (target) {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerHelp(target as HTMLElement);
+      }
     };
 
     // 2. Long Press Logic
     const startPress = (e: Event) => {
-        const target = (e.target as HTMLElement).closest('[data-toga-help]');
-        if (!target) return;
-        pressTimer.current = setTimeout(() => {
-            triggerHelp(target as HTMLElement);
-        }, 600); 
+      const target = (e.target as HTMLElement).closest('[data-toga-help]');
+      if (!target) return;
+      pressTimer.current = setTimeout(() => {
+        triggerHelp(target as HTMLElement);
+      }, 600);
     };
 
     const cancelPress = () => {
-        if (pressTimer.current) {
-            clearTimeout(pressTimer.current);
-            pressTimer.current = null;
-        }
+      if (pressTimer.current) {
+        clearTimeout(pressTimer.current);
+        pressTimer.current = null;
+      }
     };
 
     window.addEventListener('dblclick', handleDoubleClick);
@@ -448,144 +448,144 @@ export const TogadoCompanion: React.FC<TogadoCompanionProps> = ({ knowledgeBase 
 
   return (
     <>
-        {/* Floating Bubble UI */}
-        <div id="togado-companion-ui" className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none">
-            
-            {/* The Chat Window */}
-            {isOpen && (
-                <div className="bg-white rounded-2xl shadow-2xl w-[360px] h-[500px] flex flex-col border border-slate-200 pointer-events-auto overflow-hidden animate-slide-in-from-bottom">
-                    
-                    {/* Header */}
-                    <div className="bg-indigo-600 p-4 flex items-center justify-between text-white shrink-0">
-                         <div className="flex items-center gap-3">
-                             <div className="w-10 h-10 bg-indigo-800 rounded-full p-1 border border-indigo-400">
-                                 <TogadoAvatar className="w-full h-full" />
-                             </div>
-                             <div>
-                                 <h4 className="font-bold text-sm">Togado IA</h4>
-                                 <span className="text-xs text-indigo-200 flex items-center gap-1">
-                                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                                     En línea
-                                 </span>
-                             </div>
-                         </div>
-                         <button onClick={() => setIsOpen(false)} className="text-indigo-200 hover:text-white transition-colors">
-                             <Minimize2 className="w-5 h-5" />
-                         </button>
-                    </div>
+      {/* Floating Bubble UI */}
+      <div id="togado-companion-ui" className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none">
 
-                    {/* Messages Area */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
-                        {messages.map((msg) => (
-                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                {msg.role === 'user' ? (
-                                    <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-[85%] text-sm shadow-sm">
-                                        {msg.text}
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-2 max-w-[90%]">
-                                        <div className="w-8 h-8 shrink-0 mt-1">
-                                            <TogadoAvatar className="w-full h-full" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            {/* Standard Text Message */}
-                                            {msg.text && (
-                                                <div className="bg-white text-slate-800 border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-3 text-sm shadow-sm leading-relaxed">
-                                                    <MarkdownRenderer content={msg.text} />
-                                                </div>
-                                            )}
+        {/* The Chat Window */}
+        {isOpen && (
+          <div className="bg-white rounded-2xl shadow-2xl w-[360px] h-[500px] flex flex-col border border-slate-200 pointer-events-auto overflow-hidden animate-slide-in-from-bottom">
 
-                                            {/* Special Help Card */}
-                                            {msg.helpContext && (
-                                                <div className="bg-white border border-indigo-100 rounded-xl shadow-md overflow-hidden animate-zoom-in">
-                                                     <div className="bg-indigo-50 px-4 py-2 border-b border-indigo-100 flex items-center gap-2">
-                                                         <Sparkles className="w-4 h-4 text-indigo-600" />
-                                                         <span className="font-bold text-xs text-indigo-800 uppercase tracking-wide">Contexto: {msg.helpContext.title}</span>
-                                                     </div>
-                                                     <div className="p-4">
-                                                         <p className="text-sm text-slate-700 mb-3">{msg.helpContext.description}</p>
-                                                         {msg.helpContext.tip && (
-                                                             <div className="flex gap-2 items-start bg-amber-50 p-2 rounded-lg border border-amber-100">
-                                                                 <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                                                                 <p className="text-xs text-amber-800 font-medium">{msg.helpContext.tip}</p>
-                                                             </div>
-                                                         )}
-                                                     </div>
-                                                </div>
-                                            )}
-                                            <span className="text-[10px] text-slate-400 ml-1">{msg.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                        {isTyping && (
-                             <div className="flex gap-2 items-center text-xs text-slate-400 ml-10">
-                                 <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                                 <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                                 <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
-                             </div>
-                        )}
-                        <div ref={messagesEndRef} />
-                    </div>
-
-                    {/* Input Area */}
-                    <div className="p-3 bg-white border-t border-slate-200 shrink-0">
-                        <div className="relative flex items-center gap-2">
-                            <input 
-                                type="text" 
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Escribe tu duda jurídica..." 
-                                className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm"
-                            />
-                             <div className="absolute right-14">
-                                <VoiceRecorder onResult={(text) => setInputValue(prev => prev + ' ' + text)} />
-                             </div>
-                            <button 
-                                onClick={handleSendMessage}
-                                disabled={!inputValue.trim() || isTyping}
-                                className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 transition-colors shadow-sm"
-                            >
-                                <Send className="w-4 h-4" />
-                            </button>
-                        </div>
-                        <div className="text-[10px] text-center text-slate-400 mt-2">
-                            Togado puede cometer errores. Verifica la info legal.
-                        </div>
-                    </div>
+            {/* Header */}
+            <div className="bg-indigo-600 p-4 flex items-center justify-between text-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-800 rounded-full p-1 border border-indigo-400">
+                  <TogadoAvatar className="w-full h-full" />
                 </div>
-            )}
+                <div>
+                  <h4 className="font-bold text-sm">Togado IA</h4>
+                  <span className="text-xs text-indigo-200 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    En línea
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => setIsOpen(false)} className="text-indigo-200 hover:text-white transition-colors">
+                <Minimize2 className="w-5 h-5" />
+              </button>
+            </div>
 
-            {/* Minimized Trigger */}
-            {!isOpen && (
-                 <button 
-                    onClick={() => setIsOpen(true)}
-                    className="w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center hover:scale-110 transition-transform border-2 border-indigo-100 relative group pointer-events-auto"
-                 >
-                     <TogadoAvatar className="w-10 h-10" />
-                     {/* Notification Badge if unread messages existed? For now just visual */}
-                     <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
-                    </span>
-                 </button>
-            )}
-        </div>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {msg.role === 'user' ? (
+                    <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-[85%] text-sm shadow-sm">
+                      {msg.text}
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 max-w-[90%]">
+                      <div className="w-8 h-8 shrink-0 mt-1">
+                        <TogadoAvatar className="w-full h-full" />
+                      </div>
+                      <div className="space-y-2">
+                        {/* Standard Text Message */}
+                        {msg.text && (
+                          <div className="bg-white text-slate-800 border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-3 text-sm shadow-sm leading-relaxed">
+                            <MarkdownRenderer content={msg.text} />
+                          </div>
+                        )}
 
-        {/* Highlighter Box (Visible when active) */}
-        {highlightRect && (
-            <div 
-                className="fixed z-[90] pointer-events-none transition-all duration-300 ease-out border-2 border-amber-400 bg-amber-400/10 rounded-lg shadow-[0_0_20px_rgba(251,191,36,0.4)] backdrop-brightness-110 animate-pulse"
-                style={{
-                    top: highlightRect.top - 4,
-                    left: highlightRect.left - 4,
-                    width: highlightRect.width + 8,
-                    height: highlightRect.height + 8,
-                }}
-            />
+                        {/* Special Help Card */}
+                        {msg.helpContext && (
+                          <div className="bg-white border border-indigo-100 rounded-xl shadow-md overflow-hidden animate-zoom-in">
+                            <div className="bg-indigo-50 px-4 py-2 border-b border-indigo-100 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-indigo-600" />
+                              <span className="font-bold text-xs text-indigo-800 uppercase tracking-wide">Contexto: {msg.helpContext.title}</span>
+                            </div>
+                            <div className="p-4">
+                              <p className="text-sm text-slate-700 mb-3">{msg.helpContext.description}</p>
+                              {msg.helpContext.tip && (
+                                <div className="flex gap-2 items-start bg-amber-50 p-2 rounded-lg border border-amber-100">
+                                  <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                  <p className="text-xs text-amber-800 font-medium">{msg.helpContext.tip}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <span className="text-[10px] text-slate-400 ml-1">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex gap-2 items-center text-xs text-slate-400 ml-10">
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="p-3 bg-white border-t border-slate-200 shrink-0">
+              <div className="relative flex items-center gap-2">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Escribe tu duda jurídica..."
+                  className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm"
+                />
+                <div className="absolute right-14">
+                  <VoiceRecorder onResult={(text) => setInputValue(prev => prev + ' ' + text)} />
+                </div>
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isTyping}
+                  className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 transition-colors shadow-sm"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="text-[10px] text-center text-slate-400 mt-2">
+                Togado puede cometer errores. Verifica la info legal.
+              </div>
+            </div>
+          </div>
         )}
+
+        {/* Minimized Trigger */}
+        {!isOpen && (
+          <button
+            onClick={() => setIsOpen(true)}
+            className="w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center hover:scale-110 transition-transform border-2 border-indigo-100 relative group pointer-events-auto"
+          >
+            <TogadoAvatar className="w-10 h-10" />
+            {/* Notification Badge if unread messages existed? For now just visual */}
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Highlighter Box (Visible when active) */}
+      {highlightRect && (
+        <div
+          className="fixed z-[90] pointer-events-none transition-all duration-300 ease-out border-2 border-amber-400 bg-amber-400/10 rounded-lg shadow-[0_0_20px_rgba(251,191,36,0.4)] backdrop-brightness-110 animate-pulse"
+          style={{
+            top: highlightRect.top - 4,
+            left: highlightRect.left - 4,
+            width: highlightRect.width + 8,
+            height: highlightRect.height + 8,
+          }}
+        />
+      )}
     </>
   );
 };

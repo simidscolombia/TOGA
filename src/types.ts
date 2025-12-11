@@ -11,6 +11,17 @@ export interface User {
   avatarUrl?: string;
   interests?: string[];
   onboardingCompleted?: boolean;
+  xp?: number;
+  level?: number;
+}
+
+export interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  xpReward: number;
+  completed: boolean;
+  actionId: string; // 'create_case', 'upload_doc', 'chat_ai'
 }
 
 export type CaseStage = 'Pre-Jurídico' | 'Admisión' | 'Probatoria' | 'Alegatos' | 'Fallo';

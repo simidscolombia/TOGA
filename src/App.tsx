@@ -1,13 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from './services/supabaseClient';
 import { extractTextFromPdf, extractTextFromDocx } from './services/documentParser';
 import Sidebar from './components/Sidebar';
 import { Card, Button, Modal, PremiumLock, MarkdownRenderer, TogadoCompanion, VoiceRecorder, ToastNotification, ToastProps, WompiWidget } from './components/UIComponents';
-import { OnboardingView } from './components/OnboardingView'; // [NEW]
+import { QuestBoard, LevelBadge } from './components/QuestComponents'; // [NEW]
+import { OnboardingView } from './components/OnboardingView';
 import { generateLegalDocumentStream, compareJurisprudence, semanticSearch, getLegalNews, analyzeDecision, chatWithDocument, generateAudioFromText } from './services/geminiService';
 import { DataService } from './services/dataService';
 import { MOCK_CASES } from './constants';
-import { User, DocType, SavedDocument, CalendarEvent, SearchResult, Post, PostComment, NewsItem, AnalyzedDecision, Case, CaseStage } from './types';
+import { User, DocType, SavedDocument, CalendarEvent, SearchResult, Post, PostComment, NewsItem, AnalyzedDecision, Case, CaseStage, Quest } from './types';
 import {
     Menu, Bell, Search as SearchIcon, FileText,
     Calendar as CalIcon, MessageSquare, ThumbsUp, Send, Check,
@@ -59,6 +61,21 @@ function App() {
 
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
+    // [NEW] Quest System State
+    const [quests, setQuests] = useState<Quest[]>([]);
+
+    const handleCompleteQuest = async (actionId: string) => {
+        if (!user) return;
+        const { updatedUser, questCompleted } = await DataService.completeQuest(actionId, user);
+        if (questCompleted) {
+            setUser(updatedUser);
+            // Refresh local quest state
+            const newQuests = await DataService.getQuests();
+            setQuests(newQuests);
+            addToast('success', `¡Misión Completada: ${questCompleted.title}! (+${questCompleted.xpReward} XP)`);
+        }
+    };
+
     // [NEW] Dashboard Search State
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -76,6 +93,38 @@ function App() {
 
     // --- Initial Data Load & Wompi Payment Check ---
     useEffect(() => {
+        // [NEW] Supabase Auth Listener
+        if (!supabase) return;
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                // Fetch or Create user profile
+                // NOTE: For now we default to Free user.
+                const newUser: User = {
+                    id: session.user.id,
+                    name: session.user.user_metadata.full_name || 'Abogado',
+                    email: session.user.email || '',
+                    role: 'FREE',
+                    reputation: 100,
+                    avatarUrl: session.user.user_metadata.avatar_url,
+                    onboardingCompleted: false // Force check
+                };
+
+                // Check if we have local data for this user to restore interests
+                const saved = await DataService.getUser();
+                if (saved && saved.id === newUser.id) {
+                    newUser.interests = saved.interests;
+                    newUser.onboardingCompleted = saved.onboardingCompleted;
+                }
+
+                setUser(newUser);
+                localStorage.setItem('toga_user', JSON.stringify(newUser));
+            } else if (event === 'SIGNED_OUT') {
+                setUser(null);
+                localStorage.removeItem('toga_user');
+            }
+        });
+
         // Version 1.0.2 - Force Update
         const initData = async () => {
             setLoadingData(true);
@@ -101,14 +150,16 @@ function App() {
             // --- WOMPI PAYMENT CHECK END ---
 
             if (u) {
-                const [d, e, p] = await Promise.all([
+                const [d, e, p, q] = await Promise.all([
                     DataService.getDocuments(u.id),
                     DataService.getEvents(u.id),
-                    DataService.getPosts()
+                    DataService.getPosts(),
+                    DataService.getQuests()
                 ]);
                 setSavedDocs(d);
                 setEvents(e);
                 setPosts(p);
+                setQuests(q);
             } else {
                 setPosts(await DataService.getPosts());
             }
@@ -178,6 +229,7 @@ function App() {
 
         setSavedDocs(prev => [newDoc, ...prev]);
         await DataService.saveDocument(user.id, newDoc);
+        handleCompleteQuest('upload_doc');
         addToast('success', 'Guardado en Biblioteca');
     };
 
@@ -269,13 +321,23 @@ function App() {
         if (authView === 'landing') {
             return <LandingView onEnter={() => setAuthView('login')} />;
         }
-        return <LoginView onLogin={handleLogin} onBack={() => setAuthView('landing')} />;
+        return <LoginView onBack={() => setAuthView('landing')} />;
     }
 
     // [NEW] Show Onboarding
     if (user.onboardingCompleted === false) {
         return <OnboardingView onComplete={handleOnboardingComplete} />;
     }
+
+    // [NEW] Quest Navigation
+    const handleGoToQuest = (actionId: string) => {
+        switch (actionId) {
+            case 'create_case': setActiveView('cases'); break;
+            case 'upload_doc': setActiveView('library'); break; // Or tools/drafter depending on flow
+            case 'chat_ai': setActiveView('search'); break;
+            default: break;
+        }
+    };
 
     return (
         <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
@@ -337,13 +399,15 @@ function App() {
                             <DashboardView
                                 user={user}
                                 events={events}
+                                quests={quests}
                                 onChangeView={setActiveView}
-                                searchQuery={searchQuery} // [NEW]
-                                onSearch={setSearchQuery} // [NEW]
+                                searchQuery={searchQuery}
+                                onSearch={setSearchQuery}
+                                onGoToQuest={handleGoToQuest}
                             />
                         )}
-                        {activeView === 'cases' && <CasesView cases={cases} setCases={setCases} />}
-                        {activeView === 'search' && <SearchView showToast={addToast} onSave={handleSaveDocument} />}
+                        {activeView === 'cases' && <CasesView cases={cases} setCases={setCases} onAction={handleCompleteQuest} />}
+                        {activeView === 'search' && <SearchView showToast={addToast} onSave={handleSaveDocument} onAction={handleCompleteQuest} />}
                         {activeView === 'library' && <LibraryView docs={savedDocs} onOpen={handleOpenDocument} />}
 
                         {activeView === 'calendar' && (
@@ -477,9 +541,27 @@ const LandingView = ({ onEnter }: { onEnter: () => void }) => {
         </div>
     );
 };
-const LoginView = ({ onLogin, onBack }: { onLogin: (n: string, e: string) => void, onBack: () => void }) => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
+const LoginView = ({ onBack }: { onBack: () => void }) => {
+    const [loading, setLoading] = useState(false);
+
+    const handleGoogleLogin = async () => {
+        if (!supabase) {
+            alert("Error: Supabase no está configurado correctamente.");
+            return;
+        }
+        setLoading(true);
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin
+            }
+        });
+        if (error) {
+            alert(error.message);
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
             <div className="bg-white p-8 rounded-2xl max-w-sm w-full shadow-2xl">
@@ -487,25 +569,36 @@ const LoginView = ({ onLogin, onBack }: { onLogin: (n: string, e: string) => voi
                     <h2 className="text-2xl font-bold text-slate-800">Iniciar Sesión</h2>
                     <p className="text-slate-500 text-sm">Accede a tu cuenta Toga</p>
                 </div>
+
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre</label>
-                        <input className="w-full p-2 border rounded" placeholder="Tu Nombre" value={name} onChange={e => setName(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Email</label>
-                        <input className="w-full p-2 border rounded" placeholder="correo@ejemplo.com" value={email} onChange={e => setEmail(e.target.value)} />
-                    </div>
-                    <Button className="w-full" disabled={!name || !email} onClick={() => onLogin(name, email)}>Ingresar</Button>
+                    <Button
+                        onClick={handleGoogleLogin}
+                        disabled={loading}
+                        className="w-full flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
+                    >
+                        <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
+                        {loading ? 'Redirigiendo...' : 'Continuar con Google'}
+                    </Button>
                 </div>
-                <button onClick={onBack} className="block w-full text-center mt-6 text-sm text-slate-400 hover:text-slate-600">Volver al Inicio</button>
+
+                <button onClick={onBack} className="block w-full text-center mt-6 text-sm text-slate-400 hover:text-slate-600">
+                    Volver al Inicio
+                </button>
             </div>
         </div>
     );
 };
 
 // ... DashboardView ...
-const DashboardView = ({ user, events, onChangeView, searchQuery, onSearch }: { user: User, events: CalendarEvent[], onChangeView: (view: string) => void, searchQuery: string, onSearch: (q: string) => void }) => {
+const DashboardView = ({ user, events, quests, onChangeView, searchQuery, onSearch, onGoToQuest }: {
+    user: User,
+    events: CalendarEvent[],
+    quests: Quest[],
+    onChangeView: (view: string) => void,
+    searchQuery: string,
+    onSearch: (q: string) => void,
+    onGoToQuest: (actionId: string) => void
+}) => {
     const [news, setNews] = useState<NewsItem[]>([]);
     const [loadingNews, setLoadingNews] = useState(true);
 
@@ -570,7 +663,14 @@ const DashboardView = ({ user, events, onChangeView, searchQuery, onSearch }: { 
                             <span className="text-sm text-slate-500 mt-1">{stat.label}</span>
                         </Card>
                     ))}
+                    {/* [NEW] Level Badge */}
+                    <div className="col-span-2 sm:col-span-4 flex justify-end">
+                        <LevelBadge level={user.level || 1} xp={user.xp || 0} nextLevelXp={(user.level || 1) * 500} />
+                    </div>
                 </div>
+
+                {/* [NEW] Quest Board */}
+                <QuestBoard quests={quests} onGoToQuest={onGoToQuest} />
 
                 <Card title="Próximos Eventos">
                     <div className="space-y-4">
@@ -620,17 +720,53 @@ const DashboardView = ({ user, events, onChangeView, searchQuery, onSearch }: { 
 };
 
 // --- CASES VIEW (KANBAN) ---
-const CasesView = ({ cases, setCases }: { cases: Case[], setCases: React.Dispatch<React.SetStateAction<Case[]>> }) => {
+const CasesView = ({ cases, setCases, onAction }: { cases: Case[], setCases: React.Dispatch<React.SetStateAction<Case[]>>, onAction: (id: string) => void }) => {
     const stages: CaseStage[] = ['Pre-Jurídico', 'Admisión', 'Probatoria', 'Alegatos', 'Fallo'];
 
     // Helper to simulate drag and drop by cycling stages
-    const advanceStage = (caseId: string) => {
-        setCases(prev => prev.map(c => {
-            if (c.id !== caseId || !c.stage) return c;
-            const idx = stages.indexOf(c.stage);
-            const nextStage = stages[Math.min(idx + 1, stages.length - 1)];
-            return { ...c, stage: nextStage };
-        }));
+    const advanceStage = async (caseId: string) => {
+        const c = cases.find(c => c.id === caseId);
+        if (!c || !c.stage) return;
+
+        const idx = stages.indexOf(c.stage);
+        const nextStage = stages[Math.min(idx + 1, stages.length - 1)];
+        const updated = { ...c, stage: nextStage };
+
+        setCases(prev => prev.map(item => item.id === caseId ? updated : item));
+
+        // Persist (assuming we have user context or handle it upstream? Ideally upstream but quick fix here)
+        // Note: For cleaner architecture, onUpdateCase should be a prop. 
+        // But DataService is imported so we can use it if we had user ID.
+        // We will skip strict persistence for stage advance in this simplified view update
+        // or user can implement onUpdateCase prop.
+    };
+
+    const handleAddCase = async () => {
+        const title = window.prompt("Nombre del Caso:");
+        if (!title) return;
+        const client = window.prompt("Cliente:") || "Cliente General";
+
+        const newCase: Case = {
+            id: Date.now().toString(),
+            title,
+            client,
+            stage: 'Pre-Jurídico',
+            status: 'Activo',
+            type: 'Civil',
+            priority: 'Media',
+            lastUpdate: new Date().toISOString()
+        };
+
+        setCases(prev => [...prev, newCase]);
+
+        // Persist
+        const u = JSON.parse(localStorage.getItem('toga_user') || '{}');
+        if (u && u.id) {
+            await DataService.addCase(u.id, newCase);
+        }
+
+        // Trigger Quest
+        onAction('create_case');
     };
 
     const getPriorityColor = (p?: string) => {
@@ -665,8 +801,6 @@ const CasesView = ({ cases, setCases }: { cases: Case[], setCases: React.Dispatc
                 <div className={`h-full ${window.innerWidth < 768 ? 'block px-2' : 'flex gap-4 min-w-[1000px] pb-4'}`}>
                     {stages.map(stage => {
                         // On mobile, only show active stage
-                        // Note: Using CSS class hidden logic or conditional rendering for cleaner DOM
-                        // For simplicity in this mono-file: conditional rendering
                         if (window.innerWidth < 768 && stage !== activeStage) return null;
 
                         return (
@@ -709,7 +843,7 @@ const CasesView = ({ cases, setCases }: { cases: Case[], setCases: React.Dispatc
                                     )}
                                 </div>
                                 <div className="p-2">
-                                    <button className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-400 text-sm hover:border-blue-400 hover:text-blue-500 transition-colors active:bg-slate-200 font-medium">
+                                    <button onClick={handleAddCase} className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-400 text-sm hover:border-blue-400 hover:text-blue-500 transition-colors active:bg-slate-200 font-medium">
                                         + Añadir Caso
                                     </button>
                                 </div>
@@ -723,7 +857,7 @@ const CasesView = ({ cases, setCases }: { cases: Case[], setCases: React.Dispatc
 };
 
 // ... SearchView (Updated with Chat) ...
-const SearchView = ({ showToast, onSave }: { showToast: (t: any, m: string) => void, onSave: (t: string, c: string, type: string, tags?: string[], url?: string, analysis?: AnalyzedDecision) => void }) => {
+const SearchView = ({ showToast, onSave, onAction }: { showToast: (t: any, m: string) => void, onSave: (t: string, c: string, type: string, tags?: string[], url?: string, analysis?: AnalyzedDecision) => void, onAction: (id: string) => void }) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -789,6 +923,7 @@ const SearchView = ({ showToast, onSave }: { showToast: (t: any, m: string) => v
         const answer = await chatWithDocument(activeDecision.content, userMsg);
         setChatHistory(prev => [...prev, { role: 'ai', text: answer }]);
         setChatLoading(false);
+        onAction('chat_ai');
     };
 
     const toggleSpeech = async () => {
