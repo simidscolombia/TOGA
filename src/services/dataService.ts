@@ -138,9 +138,24 @@ export const DataService = {
     user.togaCoins -= amount;
     localStorage.setItem(KEYS.USER, JSON.stringify(user));
 
-    // In a real app, we'd call Supabase RPC here:
-    // await supabase.rpc('deduct_coins', { amount });
+    if (isBackendConnected() && supabase) {
+      // Atomic update via RPC
+      const { error } = await supabase.rpc('decrement_coins', { x: amount, row_id: user.id });
 
+      if (error) {
+        console.warn('RPC failed, using update fallback:', error.message);
+        const newBalance = (user.togaCoins || 0) - amount;
+        const { error: updateError } = await supabase.from('profiles').update({ toga_coins: newBalance }).eq('id', user.id);
+        if (updateError) return false;
+      }
+
+      user.togaCoins = (user.togaCoins || 0) - amount;
+    } else {
+      user.togaCoins -= amount;
+    }
+
+    // Update local storage as fallback/cache
+    localStorage.setItem(KEYS.USER, JSON.stringify(user));
     return true;
   },
 
@@ -149,14 +164,23 @@ export const DataService = {
     if (!userStr) return;
     const user = JSON.parse(userStr);
 
+    if (isBackendConnected() && supabase) {
+      const { error } = await supabase.from('transactions').insert({
+        user_id: user.id,
+        action: transaction.action,
+        amount: -transaction.cost, // Negative for cost
+        model_used: transaction.modelUsed
+      });
+      if (error) console.error('Error logging transaction:', error);
+    }
+
+    // Local Storage Fallback
     const newTx: Transaction = {
       ...transaction,
       id: 'tx-' + Date.now(),
       userId: user.id,
       timestamp: new Date().toISOString()
     };
-
-    // Mock storage for transactions
     const txsStr = localStorage.getItem('toga_transactions') || '[]';
     const txs = JSON.parse(txsStr);
     txs.unshift(newTx);
@@ -164,6 +188,24 @@ export const DataService = {
   },
 
   async getTransactions(userId: string): Promise<Transaction[]> {
+    if (isBackendConnected() && supabase) {
+      const { data } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        return data.map((t: any) => ({
+          id: t.id,
+          userId: t.user_id,
+          action: t.action,
+          modelUsed: t.model_used,
+          cost: Math.abs(t.amount), // Convert back to positive cost for UI
+          timestamp: t.created_at
+        }));
+      }
+    }
     const txsStr = localStorage.getItem('toga_transactions') || '[]';
     const txs = JSON.parse(txsStr) as Transaction[];
     return txs.filter(t => t.userId === userId);
@@ -175,8 +217,14 @@ export const DataService = {
     if (isBackendConnected() && supabase) {
       await supabase.auth.signOut();
     }
+    // Clear ALL app state to avoid ghost users
     localStorage.removeItem(KEYS.USER);
-    window.location.reload();
+    localStorage.removeItem(KEYS.CASES); // Optional: clear cached data too
+    localStorage.removeItem(KEYS.DOCS);
+    localStorage.removeItem('sb-jpixvxaijzconelcqcdt-auth-token'); // Clear Supabase persisted session if key matches
+
+    // Force reload to login screen
+    window.location.href = '/';
   },
 
   // --- DOCUMENTS ---
@@ -348,11 +396,47 @@ export const DataService = {
 
   // --- POSTS (Community) ---
   async getPosts(): Promise<Post[]> {
+    if (isBackendConnected() && supabase) {
+      const { data } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        return data.map((p: any) => ({
+          id: p.id,
+          author: p.author_name,
+          authorRole: p.author_role || 'Abogado',
+          content: p.content,
+          likes: p.likes_count,
+          comments: p.comments_count,
+          isAnonymous: p.is_anonymous,
+          tags: p.tags || [],
+          timestamp: new Date(p.created_at).toLocaleDateString() + ' ' + new Date(p.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+      }
+    }
     const saved = localStorage.getItem(KEYS.POSTS);
     return saved ? JSON.parse(saved) : MOCK_POSTS;
   },
 
   async addPost(post: Post): Promise<void> {
+    if (isBackendConnected() && supabase) {
+      // Get current user ID to link relation if possible
+      const { data: { user } } = await supabase.auth.getUser();
+
+      await supabase.from('posts').insert({
+        user_id: user?.id,
+        author_name: post.author,
+        author_role: post.authorRole,
+        content: post.content,
+        is_anonymous: post.isAnonymous,
+        tags: post.tags,
+        likes_count: 0,
+        comments_count: 0
+      });
+    }
+
     const saved = localStorage.getItem(KEYS.POSTS);
     const posts = saved ? JSON.parse(saved) : MOCK_POSTS;
     localStorage.setItem(KEYS.POSTS, JSON.stringify([post, ...posts]));

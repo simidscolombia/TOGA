@@ -64,7 +64,7 @@ export const DrafterView = ({ initialDraft, user }: { initialDraft: { content: s
 
         try {
             await transactionPromise; // Ensure tx is recorded
-            const stream = generateLegalDocumentStream(docType, details); // We'd pass modelID here in next step
+            const stream = generateLegalDocumentStream(docType, details, selectedModelId);
             for await (const chunk of stream) {
                 setGeneratedDoc(prev => prev + chunk);
             }

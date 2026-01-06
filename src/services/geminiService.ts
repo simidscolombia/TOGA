@@ -27,7 +27,8 @@ Si te preguntan sobre la app, responde basándote en que Toga tiene: Dashboard, 
 
 export async function* generateLegalDocumentStream(
   docType: string,
-  details: string
+  details: string,
+  modelId: string = 'gemini-flash'
 ): AsyncGenerator<string, void, unknown> {
 
   if (!ai) {
@@ -43,7 +44,9 @@ export async function* generateLegalDocumentStream(
   }
 
   try {
-    const model = 'gemini-2.5-flash';
+    // Map internal IDs to real Gemini Model Names
+    const realModelName = modelId === 'gemini-pro' ? 'gemini-1.5-pro' : 'gemini-2.5-flash';
+
     const prompt = `Redacta un borrador formal de un documento tipo "${docType}".
     
     Detalles del caso: ${details}
@@ -58,7 +61,7 @@ export async function* generateLegalDocumentStream(
     Usa formato Markdown para dar estructura.`;
 
     const responseStream = await ai.models.generateContentStream({
-      model: model,
+      model: realModelName,
       contents: prompt,
       config: {
         systemInstruction: LEGAL_SYSTEM_INSTRUCTION,

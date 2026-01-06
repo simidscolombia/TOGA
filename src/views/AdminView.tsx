@@ -48,8 +48,22 @@ export const AdminView: React.FC<AdminViewProps> = ({ currentUser, showToast }) 
         setIsLoading(true);
         // Mock fetch for MVP if not connected or RLS blocks
         // In FULL implementation, this calls Supabase.
-        if (!supabase) return;
+        // Validar cliente Supabase
+        if (!supabase) {
+            console.error("CRITICAL: Supabase Client is NULL. Check Environment Variables.");
+            showToast('error', "Error Crítico: No hay conexión a base de datos.");
+            return;
+        }
+
+        console.log("Fetching users with Supabase..."); // Debug log
         const { data, error } = await supabase.from('profiles').select('*').limit(50);
+
+        if (error) {
+            console.error("ADMIN FETCH ERROR:", error);
+            showToast('error', `Error cargando usuarios: ${error.message}`);
+        } else {
+            console.log("ADMIN FETCH SUCCESS:", data?.length, "rows");
+        }
 
         if (data) {
             const mappedUsers: User[] = data.map((p: any) => ({
@@ -119,11 +133,28 @@ export const AdminView: React.FC<AdminViewProps> = ({ currentUser, showToast }) 
         <div className="h-full flex flex-col bg-slate-50">
             {/* Header */}
             <header className="bg-slate-900 text-white p-6 shadow-md">
-                <div className="flex items-center gap-3 mb-4">
-                    <Shield className="w-8 h-8 text-red-500" />
-                    <div>
-                        <h1 className="text-2xl font-bold">Panel de Comando Toga</h1>
-                        <p className="text-slate-400 text-sm">Administración y Seguridad</p>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <Shield className="w-8 h-8 text-red-500" />
+                        <div>
+                            <h1 className="text-2xl font-bold">Panel de Comando Toga</h1>
+                            <p className="text-slate-400 text-sm">Administración y Seguridad</p>
+                        </div>
+                    </div>
+                    {/* DEBUG PANEL */}
+                    <div className="bg-slate-800 p-2 rounded text-xs font-mono border border-slate-700">
+                        <p className={supabase ? "text-green-400" : "text-red-500"}>
+                            ● Client: {supabase ? "OK" : "NULL"}
+                        </p>
+                        <p className="text-slate-400">
+                            Users: {usersList.length}
+                        </p>
+                        <button
+                            onClick={fetchUsers}
+                            className="mt-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500"
+                        >
+                            🔄 Re-Fetch
+                        </button>
                     </div>
                 </div>
 
