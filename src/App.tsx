@@ -119,44 +119,57 @@ function App() {
         // Version 1.0.2 - Force Update
         const initData = async () => {
             setLoadingData(true);
-            const u = await DataService.getUser();
+            try {
+                // Timeout promise to force load after 5 seconds if connection hangs
+                const dataPromise = (async () => {
+                    const u = await DataService.getUser();
 
-            // --- WOMPI PAYMENT CHECK START ---
-            // Check if we just returned from Wompi payment
-            const query = new URLSearchParams(window.location.search);
-            const transactionId = query.get('id'); // Wompi appends ?id=...&env=...
+                    // --- WOMPI PAYMENT CHECK START ---
+                    const query = new URLSearchParams(window.location.search);
+                    const transactionId = query.get('id');
 
-            if (transactionId && u && u.role !== 'PREMIUM') {
-                const upgradedUser = { ...u, role: 'PREMIUM' as const };
-                await DataService.updateUser(upgradedUser);
-                setUser(upgradedUser);
-                addToast('success', '¡Pago procesado correctamente! Eres Premium.');
+                    if (transactionId && u && u.role !== 'PREMIUM') {
+                        const upgradedUser = { ...u, role: 'PREMIUM' as const };
+                        await DataService.updateUser(upgradedUser);
+                        setUser(upgradedUser);
+                        addToast('success', '¡Pago procesado correctamente! Eres Premium.');
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        return upgradedUser; // Use upgraded user for data fetch
+                    } else {
+                        setUser(u);
+                        return u;
+                    }
+                    // --- WOMPI PAYMENT CHECK END ---
+                })();
 
-                // Clean URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-            } else {
-                // Si el servicio devuelve null (no hay localStorage), se queda en null
-                setUser(u);
-            }
-            // --- WOMPI PAYMENT CHECK END ---
-
-            if (u) {
-                const [d, e, p, q, c] = await Promise.all([
-                    DataService.getDocuments(u.id),
-                    DataService.getEvents(u.id),
-                    DataService.getPosts(),
-                    DataService.getQuests(),
-                    DataService.getCases(u.id)
+                // Race between data fetch and 7s timeout
+                const u = await Promise.race([
+                    dataPromise,
+                    new Promise<User | null>((resolve) => setTimeout(() => resolve(null), 7000))
                 ]);
-                setSavedDocs(d);
-                setEvents(e);
-                setPosts(p);
-                setQuests(q);
-                setCases(c);
-            } else {
-                setPosts(await DataService.getPosts());
+
+                if (u) {
+                    const [d, e, p, q, c] = await Promise.all([
+                        DataService.getDocuments(u.id),
+                        DataService.getEvents(u.id),
+                        DataService.getPosts(),
+                        DataService.getQuests(),
+                        DataService.getCases(u.id)
+                    ]);
+                    setSavedDocs(d);
+                    setEvents(e);
+                    setPosts(p);
+                    setQuests(q);
+                    setCases(c);
+                } else {
+                    setPosts(await DataService.getPosts());
+                }
+            } catch (error) {
+                console.error("Error initializing data:", error);
+                addToast('error', 'Error de conexión. Cargando modo offline.');
+            } finally {
+                setLoadingData(false);
             }
-            setLoadingData(false);
         };
         initData();
         return () => { subscription.unsubscribe(); };
