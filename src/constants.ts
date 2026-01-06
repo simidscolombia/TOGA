@@ -9,7 +9,8 @@ export const MOCK_USER: User = {
   reputation: 850,
   avatarUrl: 'https://picsum.photos/200',
   interests: [],
-  onboardingCompleted: true // Mock user has already finished onboarding
+  onboardingCompleted: true, // Mock user has already finished onboarding
+  togaCoins: 50
 };
 
 export const MOCK_CASES: Case[] = [

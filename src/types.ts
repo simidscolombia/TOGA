@@ -1,12 +1,22 @@
 
 
-export type UserRole = 'FREE' | 'PREMIUM';
+export type UserRole = 'FREE' | 'PREMIUM' | 'ADMIN';
+
+
+export type Permission =
+  | 'ADMIN_ACCESS'
+  | 'MANAGE_STAFF'
+  | 'MANAGE_USERS'
+  | 'MANAGE_BALANCE'
+  | 'VIEW_FINANCIALS'
+  | 'MANAGE_KNOWLEDGE';
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  permissions?: Permission[]; // New RBAC field
   reputation: number;
   avatarUrl?: string;
   interests?: string[];
@@ -21,6 +31,16 @@ export interface User {
     gemini?: string;
   };
 }
+
+export const hasPermission = (user: User | null, permission: Permission): boolean => {
+  if (!user) return false;
+  // Super User Override
+  if (user.email === 'simidscolombia@gmail.com') return true;
+  // Role Override
+  if (user.role === 'ADMIN' && permission === 'ADMIN_ACCESS') return true;
+
+  return user.permissions?.includes(permission) || false;
+};
 
 export interface Transaction {
   id: string;

@@ -1,6 +1,5 @@
-
 import { supabase, isBackendConnected } from './supabaseClient';
-import { User, SavedDocument, CalendarEvent, Post, Case, Quest } from '../types';
+import { User, SavedDocument, CalendarEvent, Post, Case, Quest, Transaction } from '../types';
 import { MOCK_EVENTS, MOCK_POSTS, MOCK_CASES } from '../constants';
 
 const MOCK_QUESTS: Quest[] = [
@@ -82,25 +81,36 @@ export const DataService = {
     }
 
     const saved = localStorage.getItem(KEYS.USER);
-    return saved ? JSON.parse(saved) : null;
+    const user = saved ? JSON.parse(saved) : null;
+
+    // [SECURITY] Hard-lock Identity Logic
+    // This ensures you are ALWAYS Super Admin regardless of DB state.
+    if (user && user.email === 'simidscolombia@gmail.com') {
+      user.role = 'ADMIN';
+      user.permissions = ['ADMIN_ACCESS', 'MANAGE_STAFF', 'MANAGE_USERS', 'MANAGE_BALANCE', 'VIEW_FINANCIALS', 'MANAGE_KNOWLEDGE'];
+    }
+
+    return user;
   },
 
-  async updateUser(user: User): Promise<void> {
+  async updateUser(user: User): Promise<User> {
     if (isBackendConnected() && supabase) {
       const updates = {
         full_name: user.name,
         avatar_url: user.avatarUrl,
         onboarding_completed: user.onboardingCompleted,
         interests: user.interests,
-        // For this hybrid MVP, we allow client updates to support the Wompi redirect flow.
         role: user.role,
         xp: user.xp,
         level: user.level,
+        toga_coins: user.togaCoins,
+        api_keys: user.apiKeys,
         updated_at: new Date().toISOString(),
       };
       await supabase.from('profiles').update(updates).eq('id', user.id);
     }
     localStorage.setItem(KEYS.USER, JSON.stringify(user));
+    return user;
   },
 
   async loginStub(name: string, email: string): Promise<User> {
@@ -118,11 +128,55 @@ export const DataService = {
     return user;
   },
 
+  async deductCoins(amount: number): Promise<boolean> {
+    const userStr = localStorage.getItem(KEYS.USER);
+    if (!userStr) return false;
+
+    const user = JSON.parse(userStr) as User;
+    if (user.togaCoins < amount) return false;
+
+    user.togaCoins -= amount;
+    localStorage.setItem(KEYS.USER, JSON.stringify(user));
+
+    // In a real app, we'd call Supabase RPC here:
+    // await supabase.rpc('deduct_coins', { amount });
+
+    return true;
+  },
+
+  async recordTransaction(transaction: Omit<Transaction, 'id' | 'timestamp'>): Promise<void> {
+    const userStr = localStorage.getItem(KEYS.USER);
+    if (!userStr) return;
+    const user = JSON.parse(userStr);
+
+    const newTx: Transaction = {
+      ...transaction,
+      id: 'tx-' + Date.now(),
+      userId: user.id,
+      timestamp: new Date().toISOString()
+    };
+
+    // Mock storage for transactions
+    const txsStr = localStorage.getItem('toga_transactions') || '[]';
+    const txs = JSON.parse(txsStr);
+    txs.unshift(newTx);
+    localStorage.setItem('toga_transactions', JSON.stringify(txs));
+  },
+
+  async getTransactions(userId: string): Promise<Transaction[]> {
+    const txsStr = localStorage.getItem('toga_transactions') || '[]';
+    const txs = JSON.parse(txsStr) as Transaction[];
+    return txs.filter(t => t.userId === userId);
+  },
+
+
+
   async logout(): Promise<void> {
     if (isBackendConnected() && supabase) {
       await supabase.auth.signOut();
     }
     localStorage.removeItem(KEYS.USER);
+    window.location.reload();
   },
 
   // --- DOCUMENTS ---

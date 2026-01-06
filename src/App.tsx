@@ -24,6 +24,7 @@ import { ComparatorView } from './views/ComparatorView';
 import { CanalView } from './views/CanalView';
 import { CommunityView } from './views/CommunityView';
 import { ProfileView } from './views/ProfileView';
+import { AdminView } from './views/AdminView';
 
 // Constantes
 import { MOCK_CASES } from './constants';
@@ -365,6 +366,7 @@ function App() {
                     onChangeView={setActiveView}
                     isMobileOpen={isMobileOpen}
                     toggleMobile={() => setIsMobileOpen(!isMobileOpen)}
+                    user={user}
                 />
             )}
 
@@ -431,12 +433,7 @@ function App() {
                         {activeView === 'drafter' && (
                             <DrafterView
                                 user={user}
-                                onUpgrade={() => setShowUpgradeModal(true)}
-                                onSave={(title: string, content: string, type: string) => handleSaveDocument(title, content, type)}
-                                initialContent={draftToLoad}
-                                showToast={addToast}
-                                isZenMode={isZenMode}
-                                toggleZenMode={() => setIsZenMode(!isZenMode)}
+                                initialDraft={draftToLoad}
                             />
                         )}
                         {activeView === 'canal' && <CanalView />}
@@ -451,6 +448,12 @@ function App() {
                                 onUpdateUser={handleUpdateProfile}
                                 onUpgrade={() => setShowUpgradeModal(true)}
                                 onLogout={handleLogout}
+                                showToast={addToast}
+                            />
+                        )}
+                        {activeView === 'admin' && (
+                            <AdminView
+                                currentUser={user}
                                 showToast={addToast}
                             />
                         )}

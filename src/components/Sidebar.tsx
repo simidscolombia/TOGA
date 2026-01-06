@@ -12,17 +12,20 @@ import {
   LogOut,
   Calculator,
   Briefcase,
-  Play
+  Play,
+  Shield
 } from 'lucide-react';
+import { User, hasPermission } from '../types';
 
 interface SidebarProps {
   activeView: string;
   onChangeView: (view: string) => void;
   isMobileOpen: boolean;
   toggleMobile: () => void;
+  user?: User; // Add user prop
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpen, toggleMobile }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpen, toggleMobile, user }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
     { id: 'canal', label: 'Canal 24/7', icon: Play, badge: 'LIVE' },
@@ -36,6 +39,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
     { id: 'community', label: 'Comunidad', icon: Users },
     { id: 'profile', label: 'Mi Perfil', icon: UserCircle },
   ];
+
+  const showAdminPanel = user ? hasPermission(user, 'ADMIN_ACCESS') : false;
 
   return (
     <>
@@ -95,6 +100,28 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
                 </li>
               );
             })}
+
+            {/* Admin Link - Only visible if has permission */}
+            {showAdminPanel && (
+              <li className="pt-4 mt-4 border-t border-slate-700">
+                <button
+                  onClick={() => {
+                    onChangeView('admin');
+                    if (window.innerWidth < 768) toggleMobile();
+                  }}
+                  className={`
+                          w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors
+                          ${activeView === 'admin'
+                      ? 'bg-red-900/50 text-red-200 border border-red-800'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-red-300'}
+                        `}
+                >
+                  <Shield className="w-5 h-5" />
+                  <span className="flex-1 text-left">Panel Admin</span>
+                </button>
+              </li>
+            )}
+
           </ul>
         </nav>
 
@@ -111,5 +138,4 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
     </>
   );
 };
-
 export default Sidebar;

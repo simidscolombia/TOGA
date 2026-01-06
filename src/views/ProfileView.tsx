@@ -1,17 +1,43 @@
 
-import React, { useState } from 'react';
-import { User, SavedDocument, CalendarEvent, Post } from '../types';
+import React, { useState, useEffect } from 'react';
+import { User, SavedDocument, CalendarEvent, Post, Transaction } from '../types';
+import { DataService } from '../services/dataService';
 import { Card, Button } from '../components/UIComponents';
-import { Check, Edit2, Download, Shield } from 'lucide-react';
+import { Check, Edit2, Download, Shield, History, ArrowDownRight } from 'lucide-react';
 
 export const ProfileView = ({ user, docs, events, posts, onUpdateUser, onUpgrade, onLogout, showToast }: any) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(user.name);
     const [editUrl, setEditUrl] = useState(user.avatarUrl || '');
 
+    // API Keys State
+    const [openAIKey, setOpenAIKey] = useState(user.apiKeys?.openai || '');
+    const [anthropicKey, setAnthropicKey] = useState(user.apiKeys?.anthropic || '');
+
+    // Transactions State
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+    useEffect(() => {
+        DataService.getTransactions(user.id).then(setTransactions);
+    }, [user.id]);
+
     const handleSaveProfile = () => {
         onUpdateUser({ ...user, name: editName, avatarUrl: editUrl });
         setIsEditing(false);
+    };
+
+    const handleSaveKeys = async () => {
+        const updatedUser = {
+            ...user,
+            apiKeys: {
+                ...user.apiKeys,
+                openai: openAIKey,
+                anthropic: anthropicKey
+            }
+        };
+        await DataService.updateUser(updatedUser);
+        onUpdateUser(updatedUser); // Update local app state
+        showToast('success', 'Llaves API guardadas correctamente');
     };
 
     const handleBackup = () => {
@@ -56,7 +82,7 @@ export const ProfileView = ({ user, docs, events, posts, onUpdateUser, onUpgrade
                     </div>
 
                     {/* AI Wallet & Preferences */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-6 w-full text-left">
                         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                             <span className="bg-purple-100 text-purple-600 p-1 rounded-lg">💎</span>
                             Billetera & IA
@@ -72,7 +98,29 @@ export const ProfileView = ({ user, docs, events, posts, onUpdateUser, onUpgrade
                             </button>
                         </div>
 
-                        <div className="space-y-4">
+                        {/* Transaction History */}
+                        {transactions.length > 0 && (
+                            <div className="mb-6">
+                                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                    <History className="w-3 h-3" /> Últimos Movimientos
+                                </h4>
+                                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                                    {transactions.slice(0, 5).map(tx => (
+                                        <div key={tx.id} className="flex justify-between items-center text-sm p-2 hover:bg-slate-50 rounded">
+                                            <div>
+                                                <p className="font-medium text-slate-700">{tx.action}</p>
+                                                <p className="text-xs text-slate-400">{new Date(tx.timestamp).toLocaleDateString()} - {tx.modelUsed}</p>
+                                            </div>
+                                            <span className={`font-mono font-bold ${tx.cost > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                                                {tx.cost > 0 ? `-${tx.cost}` : '0'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="space-y-4 pt-4 border-t border-slate-100">
                             <p className="text-sm text-slate-600">Configura tus propias llaves para uso ilimitado (BYOK):</p>
 
                             <div className="space-y-2">
@@ -81,10 +129,8 @@ export const ProfileView = ({ user, docs, events, posts, onUpdateUser, onUpgrade
                                     type="password"
                                     placeholder="sk-..."
                                     className="w-full p-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-200 outline-none"
-                                    defaultValue={user.apiKeys?.openai || ''}
-                                    onBlur={(e) => {
-                                        // TODO: Update user logic
-                                    }}
+                                    value={openAIKey}
+                                    onChange={(e) => setOpenAIKey(e.target.value)}
                                 />
                             </div>
 
@@ -94,11 +140,12 @@ export const ProfileView = ({ user, docs, events, posts, onUpdateUser, onUpgrade
                                     type="password"
                                     placeholder="sk-ant-..."
                                     className="w-full p-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-200 outline-none"
-                                    defaultValue={user.apiKeys?.anthropic || ''}
+                                    value={anthropicKey}
+                                    onChange={(e) => setAnthropicKey(e.target.value)}
                                 />
                             </div>
                             <div className="flex justify-end mt-2">
-                                <button onClick={() => alert("Guardado simulado. En producción esto cifraría las llaves.")} className="text-xs text-purple-600 font-medium hover:underline">
+                                <button onClick={handleSaveKeys} className="text-xs text-purple-600 font-medium hover:underline">
                                     Guardar Configuración IA
                                 </button>
                             </div>
