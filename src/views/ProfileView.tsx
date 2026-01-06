@@ -54,7 +54,59 @@ export const ProfileView = ({ user, docs, events, posts, onUpdateUser, onUpgrade
                             {user.role === 'PREMIUM' ? 'Premium' : 'Gratis'}
                         </div>
                     </div>
-                </div>
+
+                    {/* AI Wallet & Preferences */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-6">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <span className="bg-purple-100 text-purple-600 p-1 rounded-lg">💎</span>
+                            Billetera & IA
+                        </h3>
+
+                        <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
+                            <div>
+                                <p className="text-sm text-slate-500 mb-1">Tu Saldo</p>
+                                <p className="text-3xl font-bold text-slate-800">{user.togaCoins || 0} <span className="text-sm font-normal text-slate-400">TogaCoins</span></p>
+                            </div>
+                            <button className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm">
+                                Recargar
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <p className="text-sm text-slate-600">Configura tus propias llaves para uso ilimitado (BYOK):</p>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-slate-700">OpenAI API Key (GPT-4)</label>
+                                <input
+                                    type="password"
+                                    placeholder="sk-..."
+                                    className="w-full p-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-200 outline-none"
+                                    defaultValue={user.apiKeys?.openai || ''}
+                                    onBlur={(e) => {
+                                        // TODO: Update user logic
+                                    }}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-slate-700">Anthropic API Key (Claude)</label>
+                                <input
+                                    type="password"
+                                    placeholder="sk-ant-..."
+                                    className="w-full p-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-200 outline-none"
+                                    defaultValue={user.apiKeys?.anthropic || ''}
+                                />
+                            </div>
+                            <div className="flex justify-end mt-2">
+                                <button onClick={() => alert("Guardado simulado. En producción esto cifraría las llaves.")} className="text-xs text-purple-600 font-medium hover:underline">
+                                    Guardar Configuración IA
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div> {/* Closes the flex flex-col items-center text-center p-6 div */}
+
+                {/* Stats - Existing Logic */}
                 <div className="border-t border-slate-100 p-6 flex justify-around">
                     <div className="text-center">
                         <div className="text-xl font-bold text-slate-900">{user.reputation}</div>

@@ -13,7 +13,30 @@ export interface User {
   onboardingCompleted?: boolean;
   xp?: number;
   level?: number;
+  // [NEW] Economy & AI
+  togaCoins: number;
+  apiKeys?: {
+    openai?: string;
+    anthropic?: string;
+    gemini?: string;
+  };
 }
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  action: string; // e.g., 'Draft Document', 'Legal Search'
+  modelUsed: string; // e.g., 'GPT-4', 'Gemini Flash'
+  cost: number;
+  timestamp: string;
+}
+
+export const AI_MODELS = {
+  GEMINI_FLASH: { id: 'gemini-flash', name: 'Togado Básico (Gemini Flash)', cost: 0, provider: 'google' },
+  GEMINI_PRO: { id: 'gemini-pro', name: 'Gemini 1.5 Pro', cost: 5, provider: 'google' },
+  GPT_4: { id: 'gpt-4', name: 'GPT-4o (OpenAI)', cost: 10, provider: 'openai' },
+  CLAUDE_3: { id: 'claude-3', name: 'Claude 3.5 Sonnet', cost: 15, provider: 'anthropic' }
+} as const;
 
 export interface Quest {
   id: string;

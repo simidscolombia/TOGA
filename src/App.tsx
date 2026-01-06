@@ -98,7 +98,9 @@ function App() {
                     role: 'FREE',
                     reputation: 100,
                     avatarUrl: session.user.user_metadata.avatar_url,
-                    onboardingCompleted: false // Force check
+                    onboardingCompleted: false, // Force check
+                    togaCoins: 50, // Welcome Bonus
+                    apiKeys: {}
                 };
 
                 // Check if we have local data for this user to restore interests
@@ -206,8 +208,7 @@ function App() {
         if (email === 'alejandro@legal.co') {
             setUser(loggedUser);
         } else {
-            // New user starts with onboarding
-            setUser({ ...loggedUser, onboardingCompleted: false, interests: [] });
+            setUser({ ...loggedUser, onboardingCompleted: false, interests: [], togaCoins: 50, apiKeys: {} });
         }
         addToast('success', `Bienvenido, ${name}`);
     };

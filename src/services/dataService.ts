@@ -74,7 +74,9 @@ export const DataService = {
           onboardingCompleted: profile.onboarding_completed,
           interests: profile.interests || [],
           xp: profile.xp || 0,
-          level: profile.level || 1
+          level: profile.level || 1,
+          togaCoins: profile.toga_coins || 0,
+          apiKeys: profile.api_keys || {}
         };
       }
     }
@@ -108,7 +110,9 @@ export const DataService = {
       name,
       email,
       role: 'FREE',
-      reputation: 100
+      reputation: 100,
+      togaCoins: 50, // Welcome Bonus
+      apiKeys: {}
     };
     localStorage.setItem(KEYS.USER, JSON.stringify(user));
     return user;
