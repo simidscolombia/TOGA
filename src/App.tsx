@@ -141,16 +141,18 @@ function App() {
             // --- WOMPI PAYMENT CHECK END ---
 
             if (u) {
-                const [d, e, p, q] = await Promise.all([
+                const [d, e, p, q, c] = await Promise.all([
                     DataService.getDocuments(u.id),
                     DataService.getEvents(u.id),
                     DataService.getPosts(),
-                    DataService.getQuests()
+                    DataService.getQuests(),
+                    DataService.getCases(u.id)
                 ]);
                 setSavedDocs(d);
                 setEvents(e);
                 setPosts(p);
                 setQuests(q);
+                setCases(c);
             } else {
                 setPosts(await DataService.getPosts());
             }

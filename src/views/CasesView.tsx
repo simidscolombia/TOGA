@@ -18,11 +18,11 @@ export const CasesView = ({ cases, setCases, onAction }: { cases: Case[], setCas
 
         setCases(prev => prev.map(item => item.id === caseId ? updated : item));
 
-        // Persist (assuming we have user context or handle it upstream? Ideally upstream but quick fix here)
-        // Note: For cleaner architecture, onUpdateCase should be a prop. 
-        // But DataService is imported so we can use it if we had user ID.
-        // We will skip strict persistence for stage advance in this simplified view update
-        // or user can implement onUpdateCase prop.
+        // Persist
+        const u = JSON.parse(localStorage.getItem('toga_user') || '{}');
+        if (u && u.id) {
+            await DataService.updateCase(u.id, updated);
+        }
     };
 
     const handleAddCase = async () => {
