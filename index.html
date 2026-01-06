@@ -24,42 +24,8 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/svg+xml" href="https://cdn-icons-png.flaticon.com/512/3771/3771345.png" />
 
-  <!-- Tailwind Configuration for Custom Animations -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          animation: {
-            'fade-in': 'fadeIn 0.2s ease-out',
-            'zoom-in': 'zoomIn 0.2s ease-out',
-            'slide-in-from-right': 'slideInRight 0.3s ease-out',
-            'slide-in-from-bottom': 'slideInBottom 0.3s ease-out',
-          },
-          keyframes: {
-            fadeIn: {
-              '0%': { opacity: '0' },
-              '100%': { opacity: '1' },
-            },
-            zoomIn: {
-              '0%': { opacity: '0', transform: 'scale(0.95)' },
-              '100%': { opacity: '1', transform: 'scale(1)' },
-            },
-            slideInRight: {
-              '0%': { transform: 'translateX(100%)', opacity: '0' },
-              '100%': { transform: 'translateX(0)', opacity: '1' },
-            },
-            slideInBottom: {
-              '0%': { transform: 'translateY(20px)', opacity: '0' },
-              '100%': { transform: 'translateY(0)', opacity: '1' },
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <link rel="stylesheet" href="/index.css">
+  <!-- Local CSS -->
+  <!-- <link rel="stylesheet" href="/index.css"> (Handled by Vite import) -->
 </head>
 
 <body>
