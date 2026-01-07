@@ -10,7 +10,7 @@ interface Props {
 
 export default function JurisprudenceView({ user }: Props) {
     // Fallback key if user doesn't have one? For now assume User has key or Sys Env
-    const apiKey = user?.apiKeys?.gemini || import.meta.env.VITE_GEMINI_API_KEY || '';
+    const apiKey = String(user?.apiKeys?.gemini || import.meta.env.VITE_GEMINI_API_KEY || '');
 
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
