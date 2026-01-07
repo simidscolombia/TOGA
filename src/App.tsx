@@ -156,7 +156,7 @@ function App() {
                             role: 'FREE',
                             reputation: 100,
                             avatarUrl: sessionUser.user_metadata.avatar_url,
-                            onboardingCompleted: false, // Default only for brand new users
+                            onboardingCompleted: true, // [FIX] Start as completed
                             togaCoins: 50,
                             permissions: [],
                             apiKeys: {}
@@ -423,10 +423,10 @@ function App() {
         return <LoginView onBack={() => setAuthView('landing')} />;
     }
 
-    // [NEW] Show Onboarding
-    if (user.onboardingCompleted === false) {
-        return <OnboardingView onComplete={handleOnboardingComplete} />;
-    }
+    // [REMOVED] Onboarding Flow - Direct access requested
+    // if (user.onboardingCompleted === false) {
+    //     return <OnboardingView onComplete={handleOnboardingComplete} />;
+    // }
 
     // [NEW] Quest Navigation
     const handleGoToQuest = (actionId: string) => {
