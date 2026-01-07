@@ -31,8 +31,14 @@ import JurisprudenceView from './views/JurisprudenceView';
 import { MOCK_CASES } from './constants';
 
 function App() {
-    const [activeView, setActiveView] = useState('dashboard');
+    const [activeView, setActiveViewState] = useState(() => localStorage.getItem('toga_active_view') || 'dashboard');
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+    // Wrapper to persist view changes
+    const setActiveView = (view: string) => {
+        setActiveViewState(view);
+        localStorage.setItem('toga_active_view', view);
+    };
 
     // --- Auth Flow State ---
     const [authView, setAuthView] = useState<'landing' | 'login'>('landing');
