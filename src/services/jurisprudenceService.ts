@@ -1,10 +1,15 @@
 import { supabase } from './supabaseClient';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Jurisprudence } from '../types';
+import mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist';
 
 // Constants for Gemini Model
-// Use 'gemini-pro' for maximum stability
+// Use 'gemini-pro' for maximum stability with text input
 const MODEL_NAME = "gemini-pro";
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export const JurisprudenceService = {
 
@@ -18,8 +23,26 @@ export const JurisprudenceService = {
 
         if (!apiKey) throw new Error("API Key de Gemini no encontrada.");
 
-        // 1. Prepare File for Gemini (Base64)
-        const base64Data = await this.fileToBase64(file);
+        // 1. Extract Text from File (Word or PDF)
+        let extractedText = "";
+        try {
+            extractedText = await this.extractTextFromFile(file);
+        } catch (error) {
+            console.error("Error extracting text:", error);
+            throw new Error("No se pudo leer el texto del archivo. Asegúrate de que sea un PDF o Word válido y no esté corrupto.");
+        }
+
+        if (!extractedText || extractedText.length < 50) {
+            throw new Error("El archivo parece estar vacío o no contiene texto legible (quizás es una imagen escaneada).");
+        }
+
+        // Limit text length if too huge (Gemini Pro limit is ~30k tokens, roughly 120k chars)
+        // Bulletins are usually smaller, but let's be safe to avoid 400 Bad Request
+        const MAX_CHARS = 100000;
+        if (extractedText.length > MAX_CHARS) {
+            console.warn(`Text truncated from ${extractedText.length} to ${MAX_CHARS} chars`);
+            extractedText = extractedText.substring(0, MAX_CHARS) + "... [Truncado]";
+        }
 
         // 2. Initialize Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
@@ -30,7 +53,14 @@ export const JurisprudenceService = {
         if (type === 'bulletin') {
             prompt = `
             Actúa como un Relator de la Corte Suprema experto en indexación.
-            Analiza el siguiente documento (Boletín Jurisprudencial) y extrae CADA UNA de las fichas jurisprudenciales encontradas.
+            Analiza el siguiente TEXTO EXTRAÍDO de un Boletín Jurisprudencial:
+            
+            --- COMIENZO DEL DOCUMENTO ---
+            ${extractedText}
+            --- FIN DEL DOCUMENTO ---
+
+            TAREA:
+            Extrae CADA UNA de las fichas jurisprudenciales encontradas en el texto anterior.
             
             FORMATO ESPERADO (JSON Array):
             [
@@ -48,31 +78,30 @@ export const JurisprudenceService = {
             - Extrae TODAS las entradas.
             - Sé preciso con los números de radicado.
             - Si encuentras un link de OneDrive/Sharepoint junto a la ficha, inclúyelo en 'source_url'.
-            - Retorna SOLO el JSON válido.
+            - Retorna SOLO el JSON válido, sin bloques de código markdown.
             `;
         } else {
-            // Full sentence analysis prompt (Future implementation)
-            prompt = "Analiza esta sentencia completa...";
+            prompt = `Analiza el siguiente texto de una sentencia judicial y extrae sus datos clave... \n\n ${extractedText.substring(0, 5000)}`;
         }
 
-        // 4. Call Gemini
+        // 4. Call Gemini (Text only mode)
         try {
-            const result = await model.generateContent([
-                prompt,
-                {
-                    inlineData: {
-                        data: base64Data.split(',')[1], // Remove 'data:application/pdf;base64,' prefix
-                        mimeType: file.type
-                    }
-                }
-            ]);
-
+            const result = await model.generateContent(prompt);
             const responseText = result.response.text();
-            const cleanJsonIdx = responseText.indexOf('[');
-            const cleanJsonEnd = responseText.lastIndexOf(']') + 1;
-            const jsonStr = responseText.substring(cleanJsonIdx, cleanJsonEnd);
 
-            const items: Partial<Jurisprudence>[] = JSON.parse(jsonStr);
+            // Clean Markdown code blocks if present
+            let cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const cleanJsonIdx = cleanJson.indexOf('[');
+            const cleanJsonEnd = cleanJson.lastIndexOf(']') + 1;
+
+            if (cleanJsonIdx === -1 || cleanJsonEnd === 0) {
+                console.error("Invalid JSON response:", responseText);
+                throw new Error("La IA no devolvió un formato válido. Intenta de nuevo.");
+            }
+
+            cleanJson = cleanJson.substring(cleanJsonIdx, cleanJsonEnd);
+
+            const items: Partial<Jurisprudence>[] = JSON.parse(cleanJson);
 
             // 5. Save to Supabase (Upsert logic to handle duplicates)
             let savedCount = 0;
@@ -118,13 +147,33 @@ export const JurisprudenceService = {
         }
     },
 
-    // Helper to convert File to Base64
-    fileToBase64(file: File): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = error => reject(error);
-        });
+    // --- Helper: Extract Text ---
+    async extractTextFromFile(file: File): Promise<string> {
+        const arrayBuffer = await file.arrayBuffer();
+
+        if (file.name.toLowerCase().endsWith('.docx')) {
+            const result = await mammoth.extractRawText({ arrayBuffer });
+            return result.value;
+        }
+        else if (file.name.toLowerCase().endsWith('.pdf')) {
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdf = await loadingTask.promise;
+            let fullText = "";
+
+            // Limit pages to avoid browser hanging on massive PDFs
+            const maxPages = Math.min(pdf.numPages, 20);
+
+            for (let i = 1; i <= maxPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map((item: any) => item.str).join(' ');
+                fullText += pageText + "\n";
+            }
+            return fullText;
+        }
+        else {
+            // Text file
+            return new TextDecoder().decode(arrayBuffer);
+        }
     }
 };
