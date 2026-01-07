@@ -81,22 +81,23 @@ export const DataService = {
           };
         }
       }
+    }
 
-      const saved = localStorage.getItem(KEYS.USER);
-      const user = saved ? JSON.parse(saved) : null;
+    // [FALLBACK] LocalStorage Logic (Run if backend fails or no user in backend)
+    const saved = localStorage.getItem(KEYS.USER);
+    // Avoid redeclaring 'user' if it causes TS issues, use 'localUser'
+    const localUser = saved ? JSON.parse(saved) : null;
 
-      // [SECURITY] Hard-lock Identity Logic
-      // This ensures you are ALWAYS Super Admin regardless of DB state.
-      if (user && user.email === 'simidscolombia@gmail.com') {
-        user.role = 'ADMIN';
-        user.permissions = ['ADMIN_ACCESS', 'MANAGE_STAFF', 'MANAGE_USERS', 'MANAGE_BALANCE', 'VIEW_FINANCIALS', 'MANAGE_KNOWLEDGE'];
-      }
+    if (localUser && localUser.email === 'simidscolombia@gmail.com') {
+      localUser.role = 'ADMIN';
+      localUser.permissions = ['ADMIN_ACCESS', 'MANAGE_STAFF', 'MANAGE_USERS', 'MANAGE_BALANCE', 'VIEW_FINANCIALS', 'MANAGE_KNOWLEDGE'];
+    }
 
-      return user;
-    },
+    return localUser;
+  },
 
-  async updateUser(user: User): Promise < User > {
-      if(isBackendConnected() && supabase) {
+  async updateUser(user: User): Promise<User> {
+    if (isBackendConnected() && supabase) {
       const updates = {
         full_name: user.name,
         avatar_url: user.avatarUrl,
