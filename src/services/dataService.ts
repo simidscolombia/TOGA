@@ -54,47 +54,49 @@ export const DataService = {
   async getUser(): Promise<User | null> {
     if (isBackendConnected() && supabase) {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      // if (!user) return null; // [FIX] Don't return null early. Fallback to localStorage logic below.
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      if (user) {
+        // Only fetch profile if we have a real Supabase user
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
 
-      if (profile) {
-        return {
-          id: profile.id,
-          name: profile.full_name || 'Abogado',
-          email: user.email || '',
-          role: profile.role || 'FREE',
-          reputation: profile.reputation || 100,
-          avatarUrl: profile.avatar_url,
-          onboardingCompleted: profile.onboarding_completed,
-          interests: profile.interests || [],
-          xp: profile.xp || 0,
-          level: profile.level || 1,
-          togaCoins: profile.toga_coins || 0,
-          apiKeys: profile.api_keys || {}
-        };
+        if (profile) {
+          return {
+            id: profile.id,
+            name: profile.full_name || 'Abogado',
+            email: user.email || '',
+            role: profile.role || 'FREE',
+            reputation: profile.reputation || 100,
+            avatarUrl: profile.avatar_url,
+            onboardingCompleted: profile.onboarding_completed,
+            interests: profile.interests || [],
+            xp: profile.xp || 0,
+            level: profile.level || 1,
+            togaCoins: profile.toga_coins || 0,
+            apiKeys: profile.api_keys || {}
+          };
+        }
       }
-    }
 
-    const saved = localStorage.getItem(KEYS.USER);
-    const user = saved ? JSON.parse(saved) : null;
+      const saved = localStorage.getItem(KEYS.USER);
+      const user = saved ? JSON.parse(saved) : null;
 
-    // [SECURITY] Hard-lock Identity Logic
-    // This ensures you are ALWAYS Super Admin regardless of DB state.
-    if (user && user.email === 'simidscolombia@gmail.com') {
-      user.role = 'ADMIN';
-      user.permissions = ['ADMIN_ACCESS', 'MANAGE_STAFF', 'MANAGE_USERS', 'MANAGE_BALANCE', 'VIEW_FINANCIALS', 'MANAGE_KNOWLEDGE'];
-    }
+      // [SECURITY] Hard-lock Identity Logic
+      // This ensures you are ALWAYS Super Admin regardless of DB state.
+      if (user && user.email === 'simidscolombia@gmail.com') {
+        user.role = 'ADMIN';
+        user.permissions = ['ADMIN_ACCESS', 'MANAGE_STAFF', 'MANAGE_USERS', 'MANAGE_BALANCE', 'VIEW_FINANCIALS', 'MANAGE_KNOWLEDGE'];
+      }
 
-    return user;
-  },
+      return user;
+    },
 
-  async updateUser(user: User): Promise<User> {
-    if (isBackendConnected() && supabase) {
+  async updateUser(user: User): Promise < User > {
+      if(isBackendConnected() && supabase) {
       const updates = {
         full_name: user.name,
         avatar_url: user.avatarUrl,
