@@ -110,7 +110,10 @@ export const DataService = {
         api_keys: user.apiKeys,
         updated_at: new Date().toISOString(),
       };
-      await supabase.from('profiles').update(updates).eq('id', user.id);
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        ...updates
+      });
     }
     localStorage.setItem(KEYS.USER, JSON.stringify(user));
     localStorage.setItem('toga_user_backup', JSON.stringify(user)); // [FIX] Create Backup

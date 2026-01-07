@@ -39,8 +39,14 @@ function App() {
         // 1. On Load / Hash Change: Update View
         const handleHashChange = () => {
             const hash = window.location.hash.replace('#/', '').replace('#', '');
+
+            // [FIX] Ignore Supabase Auth fragments (access_token, etc.)
+            if (!hash || hash.startsWith('access_token') || hash.startsWith('error_description') || hash.startsWith('type=')) {
+                return;
+            }
+
             if (hash && hash !== activeView) {
-                setActiveViewState(hash); // Use direct setter to avoid double-triggering sync
+                setActiveViewState(hash);
             }
         };
 
@@ -49,14 +55,16 @@ function App() {
 
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
-    }, []);
+    }, [activeView]);
 
     // Wrapper to persist view changes
     const setActiveView = (view: string) => {
         setActiveViewState(view);
         localStorage.setItem('toga_active_view', view);
         // 2. On View Change: Update Hash
-        window.location.hash = '/' + view;
+        if (view !== 'login' && view !== 'landing') {
+            window.location.hash = '/' + view;
+        }
     };
 
     // --- Auth Flow State ---
@@ -117,28 +125,45 @@ function App() {
             if (!isMounted) return;
             setLoadingData(true);
             try {
-                // If we have a session user passed from Auth, use basic details first
+                // If we have a session user passed from Auth, we still check localStorage first
+                // to optimistically load the profile (e.g. onboarding status)
                 let currentUser: User | null = null;
+                const saved = localStorage.getItem('toga_user');
+                if (saved) {
+                    try {
+                        currentUser = JSON.parse(saved);
+                    } catch (e) { console.error("Error parsing local user", e); }
+                }
 
                 if (sessionUser) {
-                    currentUser = {
-                        id: sessionUser.id,
-                        name: sessionUser.user_metadata.full_name || 'Abogado',
-                        email: sessionUser.email || '',
-                        role: 'FREE',
-                        reputation: 100,
-                        avatarUrl: sessionUser.user_metadata.avatar_url,
-                        onboardingCompleted: false,
-                        togaCoins: 50,
-                        permissions: [],
-                        apiKeys: {}
-                    };
-                    // Update state immediately to show UI
+                    // We have an active session.
+                    // If we have a local user matching this session, use it.
+                    // Otherwise, build a basic one.
+                    if (currentUser && currentUser.id === sessionUser.id) {
+                        // Keep the local state (it has the correct onboardingCompleted flag)
+                        // and just update auth details if needed
+                        currentUser = {
+                            ...currentUser,
+                            email: sessionUser.email || currentUser.email,
+                            avatarUrl: sessionUser.user_metadata.avatar_url || currentUser.avatarUrl
+                        };
+                    } else {
+                        // New login or mismatch -> create clean state
+                        currentUser = {
+                            id: sessionUser.id,
+                            name: sessionUser.user_metadata.full_name || 'Abogado',
+                            email: sessionUser.email || '',
+                            role: 'FREE',
+                            reputation: 100,
+                            avatarUrl: sessionUser.user_metadata.avatar_url,
+                            onboardingCompleted: false, // Default only for brand new users
+                            togaCoins: 50,
+                            permissions: [],
+                            apiKeys: {}
+                        };
+                    }
+                    // Update state immediately to show UI (optimistic)
                     setUser(currentUser);
-                } else {
-                    // Try to load from localStorage first for speed
-                    const saved = localStorage.getItem('toga_user');
-                    if (saved) currentUser = JSON.parse(saved);
                 }
 
                 // If we have a user (from session or local), verify with DB
@@ -390,11 +415,7 @@ function App() {
         if (authView === 'landing') {
             return (
                 <>
-                    <div style={{ position: 'fixed', bottom: 0, right: 0, padding: '4px', background: 'rgba(255,0,0,0.8)', color: 'white', fontSize: '10px', zIndex: 9999, pointerEvents: 'none' }}>
-                        v2.2 DEBUG STORAGE: Keys [{Object.keys(localStorage).length}]: {Object.keys(localStorage).join(', ')} |
-                        User: {localStorage.getItem('toga_user') ? '✅' : '❌'} |
-                        Backup: {localStorage.getItem('toga_user_backup') ? '✅' : '❌'}
-                    </div>
+
                     <LandingView onEnter={() => setAuthView('login')} />
                 </>
             );
