@@ -34,10 +34,29 @@ function App() {
     const [activeView, setActiveViewState] = useState(() => localStorage.getItem('toga_active_view') || 'dashboard');
     const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+    // URL Hash Sync Logic
+    useEffect(() => {
+        // 1. On Load / Hash Change: Update View
+        const handleHashChange = () => {
+            const hash = window.location.hash.replace('#/', '').replace('#', '');
+            if (hash && hash !== activeView) {
+                setActiveViewState(hash); // Use direct setter to avoid double-triggering sync
+            }
+        };
+
+        // Initial check
+        handleHashChange();
+
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
+
     // Wrapper to persist view changes
     const setActiveView = (view: string) => {
         setActiveViewState(view);
         localStorage.setItem('toga_active_view', view);
+        // 2. On View Change: Update Hash
+        window.location.hash = '/' + view;
     };
 
     // --- Auth Flow State ---
