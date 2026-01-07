@@ -180,8 +180,10 @@ function App() {
                 if (event === 'SIGNED_IN' && session?.user) {
                     initData(session.user);
                 } else if (event === 'SIGNED_OUT') {
-                    setUser(null);
-                    // localStorage.removeItem('toga_user'); // Don't clear local data on auto-signout to prevent tab-switch disconnects
+                    // [FIX] NEVER auto-logout on network/tab events. Only manual logout allows this.
+                    // setUser(null); 
+                    // localStorage.removeItem('toga_user'); 
+                    console.log("Supabase disconnected (keeping local session active)");
                     setLoadingData(false);
                 } else if (event === 'INITIAL_SESSION') {
                     // Handle initial load
