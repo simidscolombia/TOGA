@@ -13,6 +13,7 @@ export const ProfileView = ({ user, docs, events, posts, onUpdateUser, onUpgrade
     // API Keys State
     const [openAIKey, setOpenAIKey] = useState(user.apiKeys?.openai || '');
     const [anthropicKey, setAnthropicKey] = useState(user.apiKeys?.anthropic || '');
+    const [geminiKey, setGeminiKey] = useState(user.apiKeys?.gemini || '');
 
     // Transactions State
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -32,7 +33,8 @@ export const ProfileView = ({ user, docs, events, posts, onUpdateUser, onUpgrade
             apiKeys: {
                 ...user.apiKeys,
                 openai: openAIKey,
-                anthropic: anthropicKey
+                anthropic: anthropicKey,
+                gemini: geminiKey
             }
         };
         await DataService.updateUser(updatedUser);
@@ -144,6 +146,18 @@ export const ProfileView = ({ user, docs, events, posts, onUpdateUser, onUpgrade
                                     onChange={(e) => setAnthropicKey(e.target.value)}
                                 />
                             </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-slate-700">Gemini API Key (Google)</label>
+                                <input
+                                    type="password"
+                                    placeholder="AIza..."
+                                    className="w-full p-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-200 outline-none"
+                                    value={geminiKey}
+                                    onChange={(e) => setGeminiKey(e.target.value)}
+                                />
+                            </div>
+
                             <div className="flex justify-end mt-2">
                                 <button onClick={handleSaveKeys} className="text-xs text-purple-600 font-medium hover:underline">
                                     Guardar Configuración IA
