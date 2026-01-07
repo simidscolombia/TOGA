@@ -3,8 +3,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Jurisprudence } from '../types';
 
 // Constants for Gemini Model
-// Use 'gemini-1.5-flash-latest' for better compatibility
-const MODEL_NAME = "gemini-1.5-flash-latest";
+// Use 'gemini-pro' for maximum stability
+const MODEL_NAME = "gemini-pro";
 
 export const JurisprudenceService = {
 
