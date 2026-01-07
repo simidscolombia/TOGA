@@ -111,8 +111,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ currentUser, showToast }) 
         setSelectedUser(updatedUser);
 
         // Save to DB
-        await DataService.updateUser(updatedUser);
-        showToast('success', `Permisos de ${user.name} actualizados`);
+        try {
+            await DataService.updateUser(updatedUser);
+            showToast('success', `Permisos de ${user.name} actualizados`);
+        } catch (error: any) {
+            showToast('error', `Ocurrió un error guardando: ${error.message}`);
+        }
     };
 
     const handleRecharge = async (user: User, amount: number) => {
@@ -123,8 +127,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ currentUser, showToast }) 
 
         const updatedUser = { ...user, togaCoins: (user.togaCoins || 0) + amount };
         setUsersList(prev => prev.map(u => u.id === user.id ? updatedUser : u));
-        await DataService.updateUser(updatedUser);
-        showToast('success', `Recarga exitosa. Nuevo saldo: ${updatedUser.togaCoins}`);
+        try {
+            await DataService.updateUser(updatedUser);
+            showToast('success', `Recarga exitosa. Nuevo saldo: ${updatedUser.togaCoins}`);
+        } catch (error: any) {
+            showToast('error', `Error recargando saldo: ${error.message}`);
+        }
     };
 
 

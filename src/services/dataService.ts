@@ -116,6 +116,7 @@ export const DataService = {
       });
       if (error) {
         console.error("CRITICAL DB SAVE ERROR:", error.message, error.details);
+        throw new Error(`Error guardando en nube: ${error.message}`);
       }
     }
     localStorage.setItem(KEYS.USER, JSON.stringify(user));

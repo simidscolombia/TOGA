@@ -390,9 +390,14 @@ function App() {
     };
 
     const handleUpdateProfile = async (u: User) => {
-        setUser(u);
-        await DataService.updateUser(u);
-        addToast('success', 'Perfil actualizado');
+        try {
+            setUser(u);
+            await DataService.updateUser(u);
+            addToast('success', 'Perfil actualizado');
+        } catch (error: any) {
+            console.error(error);
+            addToast('error', error.message || 'Error actualizando perfil');
+        }
     }
 
     // --- Togado Knowledge Base ---
