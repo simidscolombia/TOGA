@@ -187,7 +187,17 @@ function App() {
                 console.error("Error initializing data:", error);
                 // Fallback to offline if possible
                 const saved = localStorage.getItem('toga_user');
-                if (saved) setUser(JSON.parse(saved));
+                if (saved) {
+                    setUser(JSON.parse(saved));
+                } else {
+                    // [FIX] Try Backup Restoration
+                    const backup = localStorage.getItem('toga_user_backup');
+                    if (backup) {
+                        console.log("Restoring session from backup...");
+                        setUser(JSON.parse(backup));
+                        localStorage.setItem('toga_user', backup);
+                    }
+                }
             } finally {
                 if (isMounted) setLoadingData(false);
             }
@@ -378,7 +388,16 @@ function App() {
 
     if (!user) {
         if (authView === 'landing') {
-            return <LandingView onEnter={() => setAuthView('login')} />;
+            return (
+                <>
+                    <div style={{ position: 'fixed', bottom: 0, right: 0, padding: '4px', background: 'rgba(255,0,0,0.8)', color: 'white', fontSize: '10px', zIndex: 9999, pointerEvents: 'none' }}>
+                        v2.2 DEBUG STORAGE: Keys [{Object.keys(localStorage).length}]: {Object.keys(localStorage).join(', ')} |
+                        User: {localStorage.getItem('toga_user') ? '✅' : '❌'} |
+                        Backup: {localStorage.getItem('toga_user_backup') ? '✅' : '❌'}
+                    </div>
+                    <LandingView onEnter={() => setAuthView('login')} />
+                </>
+            );
         }
         return <LoginView onBack={() => setAuthView('landing')} />;
     }

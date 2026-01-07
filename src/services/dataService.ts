@@ -113,6 +113,7 @@ export const DataService = {
       await supabase.from('profiles').update(updates).eq('id', user.id);
     }
     localStorage.setItem(KEYS.USER, JSON.stringify(user));
+    localStorage.setItem('toga_user_backup', JSON.stringify(user)); // [FIX] Create Backup
     return user;
   },
 
@@ -128,6 +129,7 @@ export const DataService = {
       apiKeys: {}
     };
     localStorage.setItem(KEYS.USER, JSON.stringify(user));
+    localStorage.setItem('toga_user_backup', JSON.stringify(user)); // [FIX] Create Backup
     return user;
   },
 
@@ -140,6 +142,7 @@ export const DataService = {
 
     user.togaCoins -= amount;
     localStorage.setItem(KEYS.USER, JSON.stringify(user));
+    localStorage.setItem('toga_user_backup', JSON.stringify(user)); // [FIX] Create Backup
 
     if (isBackendConnected() && supabase) {
       // Atomic update via RPC
