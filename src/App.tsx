@@ -242,11 +242,13 @@ function App() {
     };
 
     const handleLogout = async () => {
+        // [FIX] Force clear everything for manual logout
         await DataService.logout();
         setUser(null);
         setActiveView('dashboard');
         setAuthView('landing');
-        localStorage.removeItem('toga_user'); // Limpiar sesión local
+        localStorage.removeItem('toga_user');
+        localStorage.removeItem('toga_active_view'); // Reset view memory
         addToast('info', 'Sesión cerrada correctamente');
     };
 
