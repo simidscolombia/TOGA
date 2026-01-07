@@ -175,7 +175,7 @@ function App() {
                     initData(session.user);
                 } else if (event === 'SIGNED_OUT') {
                     setUser(null);
-                    localStorage.removeItem('toga_user');
+                    // localStorage.removeItem('toga_user'); // Don't clear local data on auto-signout to prevent tab-switch disconnects
                     setLoadingData(false);
                 } else if (event === 'INITIAL_SESSION') {
                     // Handle initial load
