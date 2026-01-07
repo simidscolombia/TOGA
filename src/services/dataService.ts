@@ -110,10 +110,13 @@ export const DataService = {
         api_keys: user.apiKeys,
         updated_at: new Date().toISOString(),
       };
-      await supabase.from('profiles').upsert({
+      const { error } = await supabase.from('profiles').upsert({
         id: user.id,
         ...updates
       });
+      if (error) {
+        console.error("CRITICAL DB SAVE ERROR:", error.message, error.details);
+      }
     }
     localStorage.setItem(KEYS.USER, JSON.stringify(user));
     localStorage.setItem('toga_user_backup', JSON.stringify(user)); // [FIX] Create Backup
