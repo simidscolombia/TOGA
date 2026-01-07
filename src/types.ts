@@ -32,6 +32,20 @@ export interface User {
   };
 }
 
+export interface Jurisprudence {
+  id: string;
+  radicado: string;
+  sentencia_id?: string;
+  ddp_number?: string;
+  tema?: string;
+  tesis: string;
+  source_url?: string;
+  source_type: 'bulletin' | 'upload';
+  analysis_level: 'basic' | 'deep';
+  full_analysis?: any;
+  created_at?: string;
+}
+
 export const hasPermission = (user: User | null, permission: Permission): boolean => {
   if (!user) return false;
   // Super User Override

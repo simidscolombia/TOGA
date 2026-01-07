@@ -25,6 +25,7 @@ import { CanalView } from './views/CanalView';
 import { CommunityView } from './views/CommunityView';
 import { ProfileView } from './views/ProfileView';
 import { AdminView } from './views/AdminView';
+import JurisprudenceView from './views/JurisprudenceView';
 
 // Constantes
 import { MOCK_CASES } from './constants';
@@ -40,7 +41,6 @@ function App() {
     const [isZenMode, setIsZenMode] = useState(false);
 
     // --- State ---
-    // CORRECCIÓN 1: Iniciar en null para obligar al Login
     const [user, setUser] = useState<User | null>(() => {
         const savedUser = localStorage.getItem('toga_user');
         return savedUser ? JSON.parse(savedUser) : null;
@@ -85,97 +85,118 @@ function App() {
 
     // --- Initial Data Load & Wompi Payment Check ---
     useEffect(() => {
-        // [NEW] Supabase Auth Listener
-        if (!supabase) return;
+        let authSubscription: any = null;
+        let isMounted = true;
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
-                // Fetch or Create user profile
-                // NOTE: For now we default to Free user.
-                const newUser: User = {
-                    id: session.user.id,
-                    name: session.user.user_metadata.full_name || 'Abogado',
-                    email: session.user.email || '',
-                    role: 'FREE',
-                    reputation: 100,
-                    avatarUrl: session.user.user_metadata.avatar_url,
-                    onboardingCompleted: false, // Force check
-                    togaCoins: 50, // Welcome Bonus
-                    apiKeys: {}
-                };
-
-                // Check if we have local data for this user to restore interests
-                const saved = await DataService.getUser();
-                if (saved && saved.id === newUser.id) {
-                    newUser.interests = saved.interests;
-                    newUser.onboardingCompleted = saved.onboardingCompleted;
-                }
-
-                setUser(newUser);
-                localStorage.setItem('toga_user', JSON.stringify(newUser));
-            } else if (event === 'SIGNED_OUT') {
-                setUser(null);
-                localStorage.removeItem('toga_user');
-            }
-        });
-
-        // Version 1.0.2 - Force Update
-        const initData = async () => {
+        const initData = async (sessionUser?: any) => {
+            if (!isMounted) return;
             setLoadingData(true);
             try {
-                // Timeout promise to force load after 5 seconds if connection hangs
-                const dataPromise = (async () => {
-                    const u = await DataService.getUser();
+                // If we have a session user passed from Auth, use basic details first
+                let currentUser: User | null = null;
 
-                    // --- WOMPI PAYMENT CHECK START ---
+                if (sessionUser) {
+                    currentUser = {
+                        id: sessionUser.id,
+                        name: sessionUser.user_metadata.full_name || 'Abogado',
+                        email: sessionUser.email || '',
+                        role: 'FREE',
+                        reputation: 100,
+                        avatarUrl: sessionUser.user_metadata.avatar_url,
+                        onboardingCompleted: false,
+                        togaCoins: 50,
+                        permissions: [],
+                        apiKeys: {}
+                    };
+                    // Update state immediately to show UI
+                    setUser(currentUser);
+                } else {
+                    // Try to load from localStorage first for speed
+                    const saved = localStorage.getItem('toga_user');
+                    if (saved) currentUser = JSON.parse(saved);
+                }
+
+                // If we have a user (from session or local), verify with DB
+                if (currentUser || sessionUser) {
+                    // 1. Fetch Full User Data from DB (with fallback)
+                    const dbUser = await DataService.getUser();
+                    if (dbUser) {
+                        // Merge session info with DB info (DB wins for coins/role)
+                        currentUser = { ...currentUser, ...dbUser };
+                    }
+
+                    // 2. Check Wompi Payment
                     const query = new URLSearchParams(window.location.search);
                     const transactionId = query.get('id');
-
-                    if (transactionId && u && u.role !== 'PREMIUM') {
-                        const upgradedUser = { ...u, role: 'PREMIUM' as const };
-                        await DataService.updateUser(upgradedUser);
-                        setUser(upgradedUser);
+                    if (transactionId && currentUser && currentUser.role !== 'PREMIUM') {
+                        currentUser = { ...currentUser, role: 'PREMIUM' as const };
+                        await DataService.updateUser(currentUser);
                         addToast('success', '¡Pago procesado correctamente! Eres Premium.');
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        return upgradedUser; // Use upgraded user for data fetch
-                    } else {
-                        setUser(u);
-                        return u;
                     }
-                    // --- WOMPI PAYMENT CHECK END ---
-                })();
 
-                // Race between data fetch and 7s timeout
-                const u = await Promise.race([
-                    dataPromise,
-                    new Promise<User | null>((resolve) => setTimeout(() => resolve(null), 7000))
-                ]);
+                    if (currentUser) {
+                        setUser(currentUser);
+                        localStorage.setItem('toga_user', JSON.stringify(currentUser));
 
-                if (u) {
-                    const [d, e, p, q, c] = await Promise.all([
-                        DataService.getDocuments(u.id),
-                        DataService.getEvents(u.id),
-                        DataService.getPosts(),
-                        DataService.getQuests(),
-                        DataService.getCases(u.id)
-                    ]);
-                    setSavedDocs(d);
-                    setEvents(e);
-                    setPosts(p);
-                    setQuests(q);
-                    setCases(c);
+                        // 3. Load Related Data (Parallel)
+                        const [d, e, p, q, c] = await Promise.all([
+                            DataService.getDocuments(currentUser.id),
+                            DataService.getEvents(currentUser.id),
+                            DataService.getPosts(),
+                            DataService.getQuests(),
+                            DataService.getCases(currentUser.id)
+                        ]);
+                        setSavedDocs(d);
+                        setEvents(e);
+                        setPosts(p);
+                        setQuests(q);
+                        setCases(c);
+                    }
                 } else {
+                    // No user, maybe load public data like posts
                     setPosts(await DataService.getPosts());
                 }
+
             } catch (error) {
                 console.error("Error initializing data:", error);
-                addToast('error', 'Error de conexión. Cargando modo offline.');
+                // Fallback to offline if possible
+                const saved = localStorage.getItem('toga_user');
+                if (saved) setUser(JSON.parse(saved));
             } finally {
-                setLoadingData(false);
+                if (isMounted) setLoadingData(false);
             }
         };
-        initData();
-        return () => { subscription.unsubscribe(); };
+
+        // Initialize Supabase Listener
+        if (supabase) {
+            const { data } = supabase.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_IN' && session?.user) {
+                    initData(session.user);
+                } else if (event === 'SIGNED_OUT') {
+                    setUser(null);
+                    localStorage.removeItem('toga_user');
+                    setLoadingData(false);
+                } else if (event === 'INITIAL_SESSION') {
+                    // Handle initial load
+                    if (session?.user) {
+                        initData(session.user);
+                    } else {
+                        // No session, just load public data
+                        initData();
+                    }
+                }
+            });
+            authSubscription = data.subscription;
+        } else {
+            console.warn("Supabase Client missing. Starting in Offline Mode.");
+            initData(); // Run without auth
+        }
+
+        return () => {
+            isMounted = false;
+            if (authSubscription) authSubscription.unsubscribe();
+        };
     }, []);
 
     // Refresh data when user changes (e.g. login)
@@ -456,6 +477,9 @@ function App() {
                                 currentUser={user}
                                 showToast={addToast}
                             />
+                        )}
+                        {activeView === 'jurisprusdencia' && (
+                            <JurisprudenceView user={user} />
                         )}
                     </div>
                 </div>

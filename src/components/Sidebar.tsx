@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   LayoutDashboard,
@@ -13,7 +12,8 @@ import {
   Calculator,
   Briefcase,
   Play,
-  Shield
+  Shield,
+  BookOpen
 } from 'lucide-react';
 import { User, hasPermission } from '../types';
 
@@ -31,6 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
     { id: 'canal', label: 'Canal 24/7', icon: Play, badge: 'LIVE' },
     { id: 'cases', label: 'Mis Casos', icon: Briefcase },
     { id: 'search', label: 'Buscador', icon: Search },
+    { id: 'jurisprusdencia', label: 'Jurisprudencia Viva', icon: BookOpen, badge: 'NUEVO' },
     { id: 'library', label: 'Biblioteca', icon: Library },
     { id: 'calendar', label: 'Agenda', icon: CalendarDays },
     { id: 'tools', label: 'Herramientas', icon: Calculator },
@@ -129,6 +130,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
           <button
             data-toga-help="nav-logout"
             className="flex items-center gap-3 text-slate-400 hover:text-white text-sm font-medium px-3 py-2 w-full transition-colors"
+            onClick={() => {
+              // Logout is handled in parent via onLogout prop usually but here it's not passed
+              // For now this button visual only, actual logout is in Profile
+            }}
           >
             <LogOut className="w-5 h-5" />
             <span>Cerrar Sesión</span>
