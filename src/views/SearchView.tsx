@@ -35,8 +35,8 @@ async function decodeAudioData(
     return buffer;
 }
 
-export const SearchView = ({ showToast, onSave, onAction }: { showToast: (t: any, m: string) => void, onSave: (t: string, c: string, type: string, tags?: string[], url?: string, analysis?: AnalyzedDecision) => void, onAction: (id: string) => void }) => {
-    const [query, setQuery] = useState('');
+export const SearchView = ({ initialQuery, showToast, onSave, onAction }: { initialQuery?: string, showToast: (t: any, m: string) => void, onSave: (t: string, c: string, type: string, tags?: string[], url?: string, analysis?: AnalyzedDecision) => void, onAction: (id: string) => void }) => {
+    const [query, setQuery] = useState(initialQuery || '');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [activeDecision, setActiveDecision] = useState<SearchResult | null>(null);

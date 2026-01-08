@@ -16,17 +16,17 @@ export const CanalView = () => {
                     </div>
 
                     <div className="absolute top-4 left-4 flex gap-2">
-                        <div className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse flex items-center gap-1">
-                            <div className="w-2 h-2 bg-white rounded-full"></div> EN VIVO
+                        <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                            <div className="w-2 h-2 bg-white rounded-full"></div> ACADEMIA
                         </div>
                         <div className="bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-md">
-                            1.2k espectadores
+                            Contenido Premium
                         </div>
                     </div>
 
                     <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-                        <h2 className="text-white text-2xl font-bold mb-1">Audiencia Pública: Reforma Pensional</h2>
-                        <p className="text-slate-200 text-sm">Corte Constitucional • Sala Plena</p>
+                        <h2 className="text-white text-2xl font-bold mb-1">Clase Magistral: Reforma Pensional</h2>
+                        <p className="text-slate-200 text-sm">Academia Toga • Actualización Jurídica</p>
                     </div>
                 </div>
 

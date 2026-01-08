@@ -54,10 +54,10 @@ export const DashboardView = ({ user, events, quests, onChangeView, searchQuery,
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-4">
-                            <Button onClick={() => onChangeView('drafter')} className="bg-white text-blue-700 hover:bg-blue-50 border-none shadow-md">
+                            <Button onClick={() => onChangeView('drafter')} className="bg-white !text-blue-700 hover:bg-blue-50 border-none shadow-md font-bold">
                                 <PenTool className="w-4 h-4 mr-2" /> Redactar
                             </Button>
-                            <Button onClick={() => onChangeView('cases')} className="bg-white text-blue-700 hover:bg-blue-50 border-none shadow-md">
+                            <Button onClick={() => onChangeView('cases')} className="bg-white !text-blue-700 hover:bg-blue-50 border-none shadow-md font-bold">
                                 <Briefcase className="w-4 h-4 mr-2" /> Mis Casos
                             </Button>
                             <Button onClick={() => onChangeView('search')} variant="secondary" className="bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-sm">

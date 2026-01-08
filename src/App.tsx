@@ -472,6 +472,7 @@ function App() {
                     isMobileOpen={isMobileOpen}
                     toggleMobile={() => setIsMobileOpen(!isMobileOpen)}
                     user={user}
+                    onLogout={handleLogout}
                 />
             )}
 
@@ -522,7 +523,7 @@ function App() {
                             />
                         )}
                         {activeView === 'cases' && <CasesView cases={cases} setCases={setCases} onAction={handleCompleteQuest} />}
-                        {activeView === 'search' && <SearchView showToast={addToast} onSave={handleSaveDocument} onAction={handleCompleteQuest} />}
+                        {activeView === 'search' && <SearchView initialQuery={searchQuery} showToast={addToast} onSave={handleSaveDocument} onAction={handleCompleteQuest} />}
                         {activeView === 'library' && <LibraryView docs={savedDocs} onOpen={handleOpenDocument} />}
 
                         {activeView === 'calendar' && (

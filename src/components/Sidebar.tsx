@@ -22,16 +22,17 @@ interface SidebarProps {
   onChangeView: (view: string) => void;
   isMobileOpen: boolean;
   toggleMobile: () => void;
-  user?: User; // Add user prop
+  user?: User;
+  onLogout: () => void; // [FIX] Added Logout Prop
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpen, toggleMobile, user }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpen, toggleMobile, user, onLogout }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
-    { id: 'canal', label: 'Canal 24/7', icon: Play, badge: 'LIVE' },
+    { id: 'canal', label: 'Academia', icon: Play, badge: 'PROX' }, // [FIX] Retaliing
     { id: 'cases', label: 'Mis Casos', icon: Briefcase },
     { id: 'search', label: 'Buscador', icon: Search },
-    { id: 'jurisprusdencia', label: 'Jurisprudencia Viva', icon: BookOpen, badge: 'NUEVO' },
+    { id: 'jurisprusdencia', label: 'Jurisprudencia', icon: BookOpen, badge: 'NUEVO' }, // [FIX] Renamed
     { id: 'library', label: 'Biblioteca', icon: Library },
     { id: 'calendar', label: 'Agenda', icon: CalendarDays },
     { id: 'tools', label: 'Herramientas', icon: Calculator },
@@ -60,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
         md:translate-x-0 flex flex-col h-full
       `}
-        data-toga-help="sidebar" // General help for the sidebar area
+        data-toga-help="sidebar"
       >
         <div className="p-6 border-b border-slate-700 flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
@@ -78,7 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
                 <li key={item.id}>
                   <button
                     id={`nav-${item.id}`}
-                    data-toga-help={`nav-${item.id}`} // Specific help identifier
+                    data-toga-help={`nav-${item.id}`}
                     onClick={() => {
                       onChangeView(item.id);
                       if (window.innerWidth < 768) toggleMobile();
@@ -102,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
               );
             })}
 
-            {/* Admin Link - Only visible if has permission */}
+            {/* Admin Link */}
             {showAdminPanel && (
               <li className="pt-4 mt-4 border-t border-slate-700">
                 <button
@@ -122,21 +123,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
                 </button>
               </li>
             )}
-
           </ul>
         </nav>
 
         <div className="p-4 border-t border-slate-800">
           <button
             data-toga-help="nav-logout"
-            className="flex items-center gap-3 text-slate-400 hover:text-white text-sm font-medium px-3 py-2 w-full transition-colors"
-            onClick={() => {
-              // Logout is handled in parent via onLogout prop usually but here it's not passed
-              // For now this button visual only, actual logout is in Profile
-            }}
+            className="flex items-center gap-3 text-slate-400 hover:text-white text-sm font-medium px-3 py-2 w-full transition-colors group"
+            onClick={onLogout}
           >
-            <LogOut className="w-5 h-5" />
-            <span>Cerrar Sesión</span>
+            <LogOut className="w-5 h-5 group-hover:text-red-400 transition-colors" />
+            <span className="group-hover:text-red-400 transition-colors">Cerrar Sesión</span>
           </button>
         </div>
       </aside>
