@@ -171,8 +171,18 @@ function App() {
                     // 1. Fetch Full User Data from DB (with fallback)
                     const dbUser = await DataService.getUser();
                     if (dbUser) {
-                        // Merge session info with DB info (DB wins for coins/role)
-                        currentUser = { ...currentUser, ...dbUser };
+                        // [FIX] Smart Merge: Protect Local Data if DB is empty/stale
+                        // If DB has no keys but Local does, keep Local.
+                        const keptApiKeys = (dbUser.apiKeys && Object.keys(dbUser.apiKeys).length > 0)
+                            ? dbUser.apiKeys
+                            : (currentUser?.apiKeys || {});
+
+                        // Merge session info with DB info (DB wins for most fields)
+                        currentUser = {
+                            ...currentUser,
+                            ...dbUser,
+                            apiKeys: keptApiKeys
+                        };
                     }
 
                     // 2. Check Wompi Payment
