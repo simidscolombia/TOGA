@@ -571,18 +571,48 @@ function App() {
 
             {/* Upgrade Modal */}
             <Modal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} title="Plan Premium Toga">
-                <div className="text-center">
-                    <div className="mb-6">
+                <div className="text-center space-y-6">
+                    <div>
                         <h4 className="text-2xl font-bold text-slate-900 mb-2">$89.000 COP / mes</h4>
                         <p className="text-slate-500">Acceso ilimitado a herramientas de IA</p>
                     </div>
-                    <div className="mb-4">
-                        <p className="text-sm text-slate-600 mb-4">Paga seguro con:</p>
+
+                    {/* Option A: TogaCoins */}
+                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                        <h5 className="font-semibold text-purple-900 mb-2">Opción 1: Pagar con Saldo</h5>
+                        <div className="flex justify-between items-center mb-4 px-4">
+                            <span className="text-sm text-purple-700">Costo:</span>
+                            <span className="text-xl font-bold text-purple-900">1000 TC</span>
+                        </div>
+                        <button
+                            onClick={async () => {
+                                if ((user?.togaCoins || 0) >= 1000) {
+                                    const success = await DataService.deductCoins(1000);
+                                    if (success) {
+                                        const updated = { ...user!, role: 'PREMIUM' as any, togaCoins: (user!.togaCoins - 1000) };
+                                        setUser(updated);
+                                        await DataService.updateUser(updated);
+                                        addToast('success', '¡Membresía Activada con TogaCoins!');
+                                        setShowUpgradeModal(false);
+                                    } else {
+                                        addToast('error', 'Error en la transacción');
+                                    }
+                                } else {
+                                    addToast('error', `Saldo insuficiente. Tienes ${user?.togaCoins || 0} TC`);
+                                }
+                            }}
+                            className="w-full py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            disabled={(user?.togaCoins || 0) < 1000}
+                        >
+                            {(user?.togaCoins || 0) >= 1000 ? 'Pagar con TogaCoins' : 'Saldo Insuficiente'}
+                        </button>
+                    </div>
+
+                    {/* Option B: Wompi */}
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-slate-600 mb-4 font-semibold">Opción 2: Tarjeta / PSE</p>
                         <WompiWidget />
                     </div>
-                    <p className="text-xs text-slate-400 mt-4">
-                        Serás redirigido a la pasarela segura de Bancolombia. Al finalizar, tu cuenta se activará automáticamente.
-                    </p>
                 </div>
             </Modal>
 

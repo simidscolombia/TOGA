@@ -255,13 +255,10 @@ export const DataService = {
       await supabase.auth.signOut();
     }
     // Clear ALL app state to avoid ghost users
-    localStorage.removeItem(KEYS.USER);
-    localStorage.removeItem(KEYS.CASES); // Optional: clear cached data too
-    localStorage.removeItem(KEYS.DOCS);
-    localStorage.removeItem('sb-jpixvxaijzconelcqcdt-auth-token'); // Clear Supabase persisted session if key matches
+    localStorage.clear(); // [FIX] Wipe everything to be safe
 
-    // Force reload to login screen
-    window.location.href = '/';
+    // Force reload to login screen (Hard Reload)
+    window.location.reload();
   },
 
   // --- DOCUMENTS ---
