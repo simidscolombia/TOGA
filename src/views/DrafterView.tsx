@@ -111,26 +111,26 @@ export const DrafterView = ({ initialDraft, user }: { initialDraft: { content: s
                                 Motor de Inteligencia (IA)
                                 <span className="text-indigo-400 cursor-help" title="Elige la potencia de la IA"><Info className="w-3 h-3" /></span>
                             </label>
-                            <div className="space-y-2">
+                            <div className="space-y-1">
                                 {Object.values(AI_MODELS).map((model) => {
                                     const userHasKey = user.apiKeys?.[model.provider as keyof typeof user.apiKeys];
                                     return (
-                                        <label key={model.id} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedModelId === model.id ? 'bg-white border-indigo-500 shadow-sm' : 'bg-transparent border-transparent hover:bg-white/50'}`}>
-                                            <div className="flex items-center gap-3">
+                                        <label key={model.id} className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${selectedModelId === model.id ? 'bg-white border-indigo-500 shadow-sm' : 'bg-transparent border-transparent hover:bg-white/50'}`}>
+                                            <div className="flex items-center gap-2">
                                                 <input
                                                     type="radio"
                                                     name="ai_model"
                                                     value={model.id}
                                                     checked={selectedModelId === model.id}
                                                     onChange={() => setSelectedModelId(model.id)}
-                                                    className="text-indigo-600 focus:ring-indigo-500"
+                                                    className="text-indigo-600 focus:ring-indigo-500 scale-90"
                                                 />
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-medium text-slate-800">{model.name}</span>
-                                                    <span className="text-xs text-slate-500">{model.cost === 0 ? 'Rápido • Uso General' : 'Razonamiento Complejo'}</span>
+                                                    <span className="text-xs font-medium text-slate-800">{model.name}</span>
+                                                    {/* <span className="text-[10px] text-slate-500">{model.cost === 0 ? 'Rápido' : 'Preciso'}</span> */}
                                                 </div>
                                             </div>
-                                            <span className={`text-xs font-bold px-2 py-1 rounded ${model.cost === 0 || userHasKey ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${model.cost === 0 || userHasKey ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                                                 {userHasKey ? 'Tu Llave' : model.cost === 0 ? 'Gratis' : `💎 ${model.cost}`}
                                             </span>
                                         </label>
