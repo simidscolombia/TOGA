@@ -16,6 +16,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { User, hasPermission } from '../types';
+import { APP_VERSION } from '../version';
 
 interface SidebarProps {
   activeView: string;
@@ -126,6 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
           </ul>
         </nav>
 
+
         <div className="p-4 border-t border-slate-800">
           <button
             data-toga-help="nav-logout"
@@ -135,8 +137,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
             <LogOut className="w-5 h-5 group-hover:text-red-400 transition-colors" />
             <span className="group-hover:text-red-400 transition-colors">Cerrar Sesión</span>
           </button>
+          <div className="mt-4 text-[10px] text-slate-600 text-center">
+            v{APP_VERSION}
+          </div>
         </div>
-      </aside>
+      </aside >
     </>
   );
 };
