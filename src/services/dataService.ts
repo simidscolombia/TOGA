@@ -110,13 +110,37 @@ export const DataService = {
         api_keys: user.apiKeys,
         updated_at: new Date().toISOString(),
       };
-      const { error } = await supabase.from('profiles').upsert({
-        id: user.id,
-        ...updates
-      });
-      if (error) {
-        console.error("CRITICAL DB SAVE ERROR:", error.message, error.details);
-        throw new Error(`Error guardando en nube: ${error.message}`);
+      // [NEW] Use RPC for Admin updates if available (safer bypass)
+      // Check if we are updating another user (implies Admin context usually)
+      const { data: { user: currentUserAuth } } = await supabase.auth.getUser();
+      const isSelfUpdate = currentUserAuth?.id === user.id;
+
+      if (!isSelfUpdate) {
+        // It's an admin update on someone else
+        console.log("Admin Update detected via RPC...");
+        const { error: rpcError } = await supabase.rpc('admin_update_user', {
+          target_user_id: user.id,
+          new_toga_coins: user.togaCoins,
+          new_role: user.role,
+          new_permissions: user.permissions
+        });
+
+        if (rpcError) {
+          // Fallback if RPC fails or doesn't exist yet
+          console.warn("RPC admin_update_user failed, trying normal update:", rpcError);
+          const { error } = await supabase.from('profiles').upsert({ id: user.id, ...updates });
+          if (error) throw new Error(`Error Admin RPC y Fallback: ${error.message}`);
+        }
+      } else {
+        // Self update (Standard RLS)
+        const { error } = await supabase.from('profiles').upsert({
+          id: user.id,
+          ...updates
+        });
+        if (error) {
+          console.error("CRITICAL DB SAVE ERROR:", error.message, error.details);
+          throw new Error(`Error guardando en nube: ${error.message}`);
+        }
       }
     }
     localStorage.setItem(KEYS.USER, JSON.stringify(user));
