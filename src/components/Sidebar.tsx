@@ -137,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
             <LogOut className="w-5 h-5 group-hover:text-red-400 transition-colors" />
             <span className="group-hover:text-red-400 transition-colors">Cerrar Sesión</span>
           </button>
-          <div className="mt-4 text-[10px] text-slate-600 text-center">
+          <div className="mt-4 text-[10px] text-slate-500 text-center font-mono opacity-50">
             v{APP_VERSION}
           </div>
         </div>
