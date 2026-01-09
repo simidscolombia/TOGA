@@ -50,7 +50,7 @@ export default function JurisprudenceView({ user }: Props) {
         setResultMsg('La IA está leyendo el documento... esto puede tardar unos segundos.');
 
         try {
-            const result = await JurisprudenceService.processDocument(file, apiKey, 'bulletin', user?.id);
+            const result = await JurisprudenceService.processDocument(file, apiKey, 'bulletin');
 
             if (result.saved > 0) {
                 setStatus('success');
@@ -72,7 +72,8 @@ export default function JurisprudenceView({ user }: Props) {
             }
 
             setFile(null);
-            setTimeout(() => loadRecent(), 1000); // 1s delay to ensure Supabase consistency
+            setTimeout(() => loadRecent(), 1000); // 1s delay
+            setTimeout(() => loadRecent(), 3000); // 3s delay (double check)
 
         } catch (error: any) {
             console.error(error);

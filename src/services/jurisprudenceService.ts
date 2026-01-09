@@ -27,7 +27,7 @@ export const JurisprudenceService = {
      * @param apiKey The Gemini API Key (from user profile or env)
      * @param type 'bulletin' | 'upload'
      */
-    async processDocument(file: File, apiKey: string, type: 'bulletin' | 'upload', userId?: string): Promise<{ saved: number, skipped: number, errors: string[] }> {
+    async processDocument(file: File, apiKey: string, type: 'bulletin' | 'upload'): Promise<{ saved: number, skipped: number, errors: string[] }> {
 
         if (!apiKey) throw new Error("API Key de Gemini no encontrada.");
 
@@ -171,9 +171,12 @@ export const JurisprudenceService = {
                     };
 
                     // CRITICAL: Assign user ownership
+                    // Removed user_id as table does not have it.
+                    /*
                     if (userId) {
                         insertPayload.user_id = userId;
                     }
+                    */
 
                     const { error } = await supabase.from('jurisprudence').insert(insertPayload);
 
