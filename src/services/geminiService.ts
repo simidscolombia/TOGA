@@ -45,7 +45,7 @@ export async function* generateLegalDocumentStream(
 
   try {
     // Map internal IDs to real Gemini Model Names
-    const realModelName = modelId === 'gemini-pro' ? 'gemini-1.5-pro' : 'gemini-1.5-flash-001';
+    const realModelName = modelId === 'gemini-pro' ? 'gemini-pro' : 'gemini-pro';
 
     const prompt = `Redacta un borrador formal de un documento tipo "${docType}".
     
@@ -107,7 +107,7 @@ export const compareJurisprudence = async (
     Asegúrate de que la tabla sea legible y esté bien estructurada.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash-001',
+      model: 'gemini-pro',
       contents: prompt,
       config: {
         systemInstruction: LEGAL_SYSTEM_INSTRUCTION
@@ -131,7 +131,7 @@ export const semanticSearch = async (query: string): Promise<SearchResult[]> => 
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash-001',
+      model: 'gemini-pro',
       contents: `Find recent Colombian jurisprudence, laws, or legal analysis regarding: "${query}". Return relevant sources with summaries.`,
       config: {
         tools: [{ googleSearch: {} }],
@@ -174,7 +174,7 @@ export const askTogado = async (message: string): Promise<string> => {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash-001',
+      model: 'gemini-pro',
       contents: message,
       config: {
         systemInstruction: TOGADO_PERSONA,
@@ -198,7 +198,7 @@ export const getLegalNews = async (): Promise<NewsItem[]> => {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash-001',
+      model: 'gemini-pro',
       contents: "Busca noticias jurídicas recientes en Colombia sobre sentencias de la Corte Constitucional, Corte Suprema y reformas legales. Retorna los 5 titulares más importantes de la última semana.",
       config: {
         tools: [{ googleSearch: {} }],
@@ -253,7 +253,7 @@ export const analyzeDecision = async (title: string, context: string): Promise<A
         }`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash-001',
+      model: 'gemini-pro',
       contents: prompt,
       config: {
         // responseMimeType: "application/json", // Removed because it conflicts with googleSearch tool
@@ -294,7 +294,7 @@ export const chatWithDocument = async (context: string, question: string): Promi
         Pregunta: "${question}"`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash-001',
+      model: 'gemini-pro',
       contents: prompt,
       config: {
         systemInstruction: "Eres un analista jurídico. Responde de forma precisa basándote en el texto proporcionado.",

@@ -5,8 +5,8 @@ import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Constants for Gemini Model
-// Use 'gemini-1.5-flash-001' specific version for guaranteed availability in v1beta
-const MODEL_NAME = "gemini-1.5-flash-001";
+// Fallback to 'gemini-pro' for maximum compatibility standard
+const MODEL_NAME = "gemini-pro";
 console.log("JurisprudenceService initialized with model:", MODEL_NAME);
 
 // Configure PDF.js worker
