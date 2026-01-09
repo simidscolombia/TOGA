@@ -50,7 +50,7 @@ export default function JurisprudenceView({ user }: Props) {
         setResultMsg('La IA está leyendo el documento... esto puede tardar unos segundos.');
 
         try {
-            const result = await JurisprudenceService.processDocument(file, apiKey, 'bulletin');
+            const result = await JurisprudenceService.processDocument(file, apiKey, 'bulletin', user?.id);
 
             if (result.saved > 0) {
                 setStatus('success');

@@ -1,2 +1,2 @@
-export const APP_VERSION = "1.9.0";
-export const LAST_UPDATED = "Fix Feedback UI";
+export const APP_VERSION = "1.10.0";
+export const LAST_UPDATED = "Fix RLS User ID";

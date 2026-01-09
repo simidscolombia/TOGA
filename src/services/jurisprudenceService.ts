@@ -27,7 +27,7 @@ export const JurisprudenceService = {
      * @param apiKey The Gemini API Key (from user profile or env)
      * @param type 'bulletin' | 'upload'
      */
-    async processDocument(file: File, apiKey: string, type: 'bulletin' | 'upload'): Promise<{ saved: number, skipped: number, errors: string[] }> {
+    async processDocument(file: File, apiKey: string, type: 'bulletin' | 'upload', userId?: string): Promise<{ saved: number, skipped: number, errors: string[] }> {
 
         if (!apiKey) throw new Error("API Key de Gemini no encontrada.");
 
@@ -44,8 +44,7 @@ export const JurisprudenceService = {
             throw new Error("El archivo parece estar vacío o no contiene texto legible (quizás es una imagen escaneada).");
         }
 
-        // Limit text length if too huge (Gemini Pro limit is ~30k tokens, roughly 120k chars)
-        // Bulletins are usually smaller, but let's be safe to avoid 400 Bad Request
+        // Limit text length if too huge
         const MAX_CHARS = 100000;
         if (extractedText.length > MAX_CHARS) {
             console.warn(`Text truncated from ${extractedText.length} to ${MAX_CHARS} chars`);
@@ -53,8 +52,8 @@ export const JurisprudenceService = {
         }
 
         // 2. Initialize Gemini
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+        const genAI = new GoogleGenerativeAI(apiKey.trim());
+        // model is instantiated inside failover helper
 
         // 3. Define the Prompt based on doc type
         let prompt = "";
@@ -92,7 +91,6 @@ export const JurisprudenceService = {
             prompt = `Analiza el siguiente texto de una sentencia judicial y extrae sus datos clave... \n\n ${extractedText.substring(0, 5000)}`;
         }
 
-        // 4. Call Gemini (Text only mode)
         // 4. Call Gemini (Text only mode) with Failover
         let cleanJson = "[]";
 
@@ -105,7 +103,10 @@ export const JurisprudenceService = {
                         const mod = genAI.getGenerativeModel({ model: m });
                         const res = await mod.generateContent(p);
                         return res.response.text();
-                    } catch (e) { lastErr = e; }
+                    } catch (e: any) {
+                        console.warn(`Model ${m} failed:`, e.message);
+                        lastErr = e;
+                    }
                 }
                 throw lastErr;
             };
@@ -118,7 +119,7 @@ export const JurisprudenceService = {
             const cleanJsonEnd = cleanJson.lastIndexOf(']') + 1;
 
             if (cleanJsonIdx === -1 || cleanJsonEnd === 0) {
-                // Try parsing as single object if array fails (sometimes Gemini returns just {})
+                // Try parsing as single object if array fails
                 if (cleanJson.startsWith('{')) {
                     cleanJson = `[${cleanJson}]`;
                 } else {
@@ -128,15 +129,14 @@ export const JurisprudenceService = {
                 cleanJson = cleanJson.substring(cleanJsonIdx, cleanJsonEnd);
             }
 
-        } catch (aiError) {
+        } catch (aiError: any) {
             console.error("AI Generation Failed (Single Doc):", aiError);
             // Graceful Fallback for Single Doc
-            // We mock the response so the flow continues and saves the doc
             cleanJson = JSON.stringify([{
                 radicado: "PENDIENTE-" + Date.now(),
                 sentencia_id: "ERROR-IA",
                 tema: "Error de Análisis IA - Revisión Manual Requerida",
-                tesis: "No se pudo conectar con los modelos de IA. El documento se ha guardado, pero requiere análisis manual.",
+                tesis: "No se pudo conectar con los modelos de IA. El documento se ha guardado, pero requiere análisis manual. Detalle: " + aiError.message,
                 analysis_level: 'basic'
             }]);
         }
@@ -144,7 +144,7 @@ export const JurisprudenceService = {
         try {
             const items: Partial<Jurisprudence>[] = JSON.parse(cleanJson);
 
-            // 5. Save to Supabase (Upsert logic to handle duplicates)
+            // 5. Save to Supabase
             let savedCount = 0;
             let skippedCount = 0;
             const errors: string[] = [];
@@ -152,7 +152,6 @@ export const JurisprudenceService = {
             if (!supabase) throw new Error("Base de datos no conectada");
 
             for (const item of items) {
-                // ... (rest of saving logic)
                 if (!item.radicado) continue;
 
                 // Check for duplicates
@@ -165,15 +164,22 @@ export const JurisprudenceService = {
                 if (existing) {
                     skippedCount++;
                 } else {
-                    const { error } = await supabase.from('jurisprudence').insert({
+                    const insertPayload: any = {
                         ...item,
                         source_type: type,
                         analysis_level: 'basic'
-                    });
+                    };
+
+                    // CRITICAL: Assign user ownership
+                    if (userId) {
+                        insertPayload.user_id = userId;
+                    }
+
+                    const { error } = await supabase.from('jurisprudence').insert(insertPayload);
 
                     if (error) {
                         console.error('Error saving item:', item.radicado, error);
-                        errors.push(`Error guardando Rad. ${item.radicado}`);
+                        errors.push(`Error guardando Rad. ${item.radicado}: ${error.message}`);
                     } else {
                         savedCount++;
                     }
