@@ -93,22 +93,55 @@ export const JurisprudenceService = {
         }
 
         // 4. Call Gemini (Text only mode)
+        // 4. Call Gemini (Text only mode) with Failover
+        let cleanJson = "[]";
+
         try {
-            const result = await model.generateContent(prompt);
-            const responseText = result.response.text();
+            // Helper Failover Inner
+            const generate = async (p: string) => {
+                let lastErr;
+                for (const m of MODEL_CANDIDATES) {
+                    try {
+                        const mod = genAI.getGenerativeModel({ model: m });
+                        const res = await mod.generateContent(p);
+                        return res.response.text();
+                    } catch (e) { lastErr = e; }
+                }
+                throw lastErr;
+            };
+
+            const responseText = await generate(prompt);
 
             // Clean Markdown code blocks if present
-            let cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
             const cleanJsonIdx = cleanJson.indexOf('[');
             const cleanJsonEnd = cleanJson.lastIndexOf(']') + 1;
 
             if (cleanJsonIdx === -1 || cleanJsonEnd === 0) {
-                console.error("Invalid JSON response:", responseText);
-                throw new Error("La IA no devolvió un formato válido. Intenta de nuevo.");
+                // Try parsing as single object if array fails (sometimes Gemini returns just {})
+                if (cleanJson.startsWith('{')) {
+                    cleanJson = `[${cleanJson}]`;
+                } else {
+                    throw new Error("Invalid JSON format");
+                }
+            } else {
+                cleanJson = cleanJson.substring(cleanJsonIdx, cleanJsonEnd);
             }
 
-            cleanJson = cleanJson.substring(cleanJsonIdx, cleanJsonEnd);
+        } catch (aiError) {
+            console.error("AI Generation Failed (Single Doc):", aiError);
+            // Graceful Fallback for Single Doc
+            // We mock the response so the flow continues and saves the doc
+            cleanJson = JSON.stringify([{
+                radicado: "PENDIENTE-" + Date.now(),
+                sentencia_id: "ERROR-IA",
+                tema: "Error de Análisis IA - Revisión Manual Requerida",
+                tesis: "No se pudo conectar con los modelos de IA. El documento se ha guardado, pero requiere análisis manual.",
+                analysis_level: 'basic'
+            }]);
+        }
 
+        try {
             const items: Partial<Jurisprudence>[] = JSON.parse(cleanJson);
 
             // 5. Save to Supabase (Upsert logic to handle duplicates)
@@ -119,6 +152,7 @@ export const JurisprudenceService = {
             if (!supabase) throw new Error("Base de datos no conectada");
 
             for (const item of items) {
+                // ... (rest of saving logic)
                 if (!item.radicado) continue;
 
                 // Check for duplicates
@@ -129,7 +163,6 @@ export const JurisprudenceService = {
                     .single();
 
                 if (existing) {
-                    // Update existing? Or Skip? For now Skip to be safe unless empty.
                     skippedCount++;
                 } else {
                     const { error } = await supabase.from('jurisprudence').insert({
@@ -149,10 +182,8 @@ export const JurisprudenceService = {
 
             return { saved: savedCount, skipped: skippedCount, errors };
 
-        } catch (error: any) {
-            console.error("Jurisprudence AI Error:", error);
-            const keyUsed = apiKey ? `...${apiKey.slice(-4)}` : 'NONE';
-            throw new Error(`Error procesando el documento con IA (Key: ${keyUsed}): ` + (error.message || error));
+        } catch (dbError: any) {
+            throw new Error("Error guardando en base de datos: " + dbError.message);
         }
     },
 
