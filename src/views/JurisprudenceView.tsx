@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileText, CheckCircle, AlertCircle, Database, Search, FileType, X } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Database, Search, FileType, X, Trash2 } from 'lucide-react';
 import { JurisprudenceService } from '../services/jurisprudenceService';
 import { User, Jurisprudence } from '../types';
 import { supabase } from '../services/supabaseClient';
@@ -78,6 +78,23 @@ export default function JurisprudenceView({ user }: Props) {
             console.error(error);
             setStatus('error');
             setResultMsg('Error técnico: ' + error.message);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('¿Estás seguro de eliminar este documento de la base de datos?')) return;
+
+        if (!supabase) return;
+
+        try {
+            const { error } = await supabase.from('jurisprudence').delete().eq('id', id);
+            if (error) throw error;
+
+            // Update UI instantly
+            setRecentItems(prev => prev.filter(i => i.id !== id));
+        } catch (err: any) {
+            console.error(err);
+            alert('Error al eliminar: ' + err.message);
         }
     };
 
@@ -202,9 +219,18 @@ export default function JurisprudenceView({ user }: Props) {
                                                     <p className="line-clamp-2 text-slate-700 leading-snug" title={item.tesis}>{item.tesis}</p>
                                                 </td>
                                                 <td className="p-3 text-right pr-4">
-                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${item.analysis_level === 'deep' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
-                                                        {item.analysis_level === 'deep' ? 'Indexado' : 'Básico'}
-                                                    </span>
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${item.analysis_level === 'deep' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                            {item.analysis_level === 'deep' ? 'Indexado' : 'Básico'}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => handleDelete(item.id)}
+                                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                                            title="Eliminar registro"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
