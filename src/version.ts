@@ -1,2 +1,2 @@
-export const APP_VERSION = "1.15.0";
-export const LAST_UPDATED = "Jurisprudence Loader & UI Refresh";
+export const APP_VERSION = "1.16.0";
+export const LAST_UPDATED = "Robust Import (AI Bypass Mode)";

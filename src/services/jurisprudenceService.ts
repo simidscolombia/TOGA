@@ -156,13 +156,17 @@ export const JurisprudenceService = {
             }
 
         } catch (aiError: any) {
-            console.error("AI Generation Failed (Single Doc):", aiError);
-            // Graceful Fallback for Single Doc
+            console.warn("AI Analysis unavailable, falling back to raw import:", aiError);
+
+            // FALLBACK INTELIGENTE:
+            // Si la IA falla, no bloqueamos la importación.
+            // Creamos un registro válido usando los metadatos básicos del archivo.
+
             cleanJson = JSON.stringify([{
-                radicado: "PENDIENTE-" + Date.now(),
-                sentencia_id: "ERROR-IA",
-                tema: "Error de Análisis IA - Revisión Manual Requerida",
-                tesis: "No se pudo conectar con los modelos de IA. El documento se ha guardado, pero requiere análisis manual. Detalle: " + aiError.message,
+                radicado: "DOC-" + Date.now().toString().slice(-6), // ID temporal único
+                sentencia_id: "IMPORTACIÓN DIRECTA",
+                tema: "Documento Indexado (Sin Análisis IA)",
+                tesis: extractedText.substring(0, 300).replace(/\n/g, ' ') + "...", // Usamos el inicio del texto como resumen
                 analysis_level: 'basic'
             }]);
         }
