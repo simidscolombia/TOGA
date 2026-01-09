@@ -88,7 +88,33 @@ export const JurisprudenceService = {
             - Retorna SOLO el JSON válido, sin bloques de código markdown.
             `;
         } else {
-            prompt = `Analiza el siguiente texto de una sentencia judicial y extrae sus datos clave... \n\n ${extractedText.substring(0, 5000)}`;
+            prompt = `
+            Actúa como un Auxiliar Judicial experto. 
+            Analiza el siguiente texto extraído de un documento jurídico (Sentencia, Auto, Demanda, Contrato):
+            
+            --- TEXTO (Primeros 30k caracteres) ---
+            ${extractedText.substring(0, 30000)}
+            --- FIN TEXTO ---
+
+            TAREA:
+            Genera un JSON estructurado con la información clave para indexar este documento en una biblioteca digital.
+
+            FORMATO ESPERADO (Array con 1 objeto):
+            [
+              {
+                "radicado": "Número de radicado o ID único (Si no hay, inventa uno basado en la fecha ej: DOC-2024-001)",
+                "sentencia_id": "Tipo de documento (ej: Sentencia T-123, Auto Interlocutorio)",
+                "tema": "Tema principal jurídico (ej: Pensión de sobrevivientes)",
+                "tesis": "Resumen ejecutivo de 1 párrafo explicando qué resuelve el documento.",
+                "analysis_level": "deep"
+              }
+            ]
+
+            REGLAS:
+            - Sé conciso en el tema.
+            - Si el texto está sucio o ilegible, intenta rescatar lo máximo posible.
+            - Responde SOLO con el JSON.
+            `;
         }
 
         // 4. Call Gemini (Text only mode) with Failover
