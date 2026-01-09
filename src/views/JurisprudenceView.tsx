@@ -52,10 +52,27 @@ export default function JurisprudenceView({ user }: Props) {
         try {
             const result = await JurisprudenceService.processDocument(file, apiKey, 'bulletin');
 
-            setStatus('success');
-            setResultMsg(`¡Éxito! Guardadas: ${result.saved}. Omitidas (Duplicadas): ${result.skipped}. Errores: ${result.errors.length}`);
+            if (result.saved > 0) {
+                setStatus('success');
+                // Check if errors exist even if saved (means Fallback was used)
+                if (result.errors.length > 0) {
+                    setResultMsg(`Guardado como borrador (IA no disponible). Errores: ${result.errors.join(', ')}`);
+                } else {
+                    setResultMsg(`¡Éxito! Guardadas: ${result.saved}.`);
+                }
+            } else if (result.skipped > 0) {
+                setStatus('processing'); // Use yellow/neutral visual if possible, or keep processing style for warning
+                setResultMsg(`El documento ya existía (Duplicado). No se guardaron cambios.`);
+            } else if (result.errors.length > 0) {
+                setStatus('error');
+                setResultMsg(`Error al guardar: ${result.errors.join(', ')}`);
+            } else {
+                setStatus('error');
+                setResultMsg("Error desconocido: No se guardó nada.");
+            }
+
             setFile(null);
-            loadRecent(); // Refresh list
+            setTimeout(() => loadRecent(), 1000); // 1s delay to ensure Supabase consistency
 
         } catch (error: any) {
             console.error(error);
