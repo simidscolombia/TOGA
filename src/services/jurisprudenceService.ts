@@ -5,8 +5,8 @@ import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Constants for Gemini Model
-// Fallback to 'gemini-pro' for maximum compatibility standard
-const MODEL_NAME = "gemini-pro";
+// Use 'gemini-1.0-pro' specific version. gemini-pro alias seems broken for this key.
+const MODEL_NAME = "gemini-1.0-pro";
 console.log("JurisprudenceService initialized with model:", MODEL_NAME);
 
 // Configure PDF.js worker
