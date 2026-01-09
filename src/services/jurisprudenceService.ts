@@ -142,9 +142,10 @@ export const JurisprudenceService = {
 
             return { saved: savedCount, skipped: skippedCount, errors };
 
-        } catch (e: any) {
-            console.error("Gemini Error:", e);
-            throw new Error("Error procesando el documento con IA: " + e.message);
+        } catch (error: any) {
+            console.error("Jurisprudence AI Error:", error);
+            const keyUsed = apiKey ? `...${apiKey.slice(-4)}` : 'NONE';
+            throw new Error(`Error procesando el documento con IA (Key: ${keyUsed}): ` + (error.message || error));
         }
     },
 
