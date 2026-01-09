@@ -222,13 +222,22 @@ export const JurisprudenceService = {
                     const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
                     const analysis = JSON.parse(cleanText);
 
-                    // Update doc locally (in memory) - In real app, update DB
+                    // Update doc locally
                     doc.analysis = analysis;
                     savedCount++;
 
-                } catch (innerError: any) {
-                    console.error(`Error analyzing doc ${doc.id}:`, innerError);
-                    errors.push({ docId: doc.id, error: innerError.message });
+                } catch (documentError: any) {
+                    console.error(`Error analyzing doc ${doc.id} with AI:`, documentError);
+                    // [fallback] Save with empty analysis instead of failing completely
+                    doc.analysis = {
+                        summary: "No se pudo generar análisis IA (Revise API Key / Modelo). Texto extraído correctamente.",
+                        facts: [],
+                        arguments: [],
+                        decision: "Pendiente de revisión manual",
+                        tags: ["Sin Análisis IA"]
+                    };
+                    errors.push({ docId: doc.id, error: `AI Failed: ${documentError.message}. Saved as draft.` });
+                    savedCount++; // Count as saved even if partial
                 }
             }
 
@@ -236,8 +245,9 @@ export const JurisprudenceService = {
 
         } catch (error: any) {
             console.error("Jurisprudence AI Error:", error);
+            // Critical failure (e.g. invalid docs), but purely AI errors are handled above
             const keyUsed = apiKey ? `...${apiKey.slice(-4)}` : 'NONE';
-            throw new Error(`Error fatal AI (Key: ${keyUsed}): ` + (error.message || error));
+            throw new Error(`Error crítico (Key: ${keyUsed}): ` + (error.message || error));
         }
     },
 
