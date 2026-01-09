@@ -138,6 +138,7 @@ export interface SearchResult {
   url: string;
   content: string;
   source?: string;
+  tags?: string[];
 }
 
 export interface NewsItem {

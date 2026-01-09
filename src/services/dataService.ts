@@ -474,6 +474,55 @@ export const DataService = {
     const saved = localStorage.getItem(KEYS.POSTS);
     const posts = saved ? JSON.parse(saved) : MOCK_POSTS;
     localStorage.setItem(KEYS.POSTS, JSON.stringify([post, ...posts]));
+  },
+
+  // --- SEARCH (Jurisprudence) ---
+  async searchJurisprudence(query: string): Promise<any[]> {
+    const term = query.toLowerCase();
+
+    if (isBackendConnected() && supabase) {
+      // Búsqueda en Supabase (título, tesis, análisis, contenido)
+      // Usamos 'ilike' (case-insensitive like) en múltiples columnas
+      const { data, error } = await supabase
+        .from('jurisprudence')
+        .select('*')
+        .or(`tesis.ilike.%${query}%,radicado.ilike.%${query}%,tema.ilike.%${query}%`)
+        .limit(20);
+
+      if (error) {
+        console.error("Error buscando en Supabase:", error);
+        return [];
+      }
+
+      if (data) {
+        return data.map((d: any) => ({
+          title: d.radicado || d.id,
+          content: d.tesis || "Sin tesis disponible",
+          source: 'Corte Suprema', // Placeholder o d.origen
+          url: d.source_url || '#',
+          id: d.id,
+          tags: [d.tema].filter(Boolean)
+        }));
+      }
+    }
+
+    // Fallback Local (si no hay backend o para demos)
+    // Buscar también en los documentos guardados localmente
+    const savedDocs = await this.getDocuments('mock-id'); // UserId irrelevante para local storage raw read
+    const results = savedDocs.filter(d =>
+      d.title.toLowerCase().includes(term) ||
+      d.content.toLowerCase().includes(term)
+    ).map(d => ({
+      title: d.title,
+      content: d.content.substring(0, 200) + '...',
+      source: 'Biblioteca Local',
+      url: '#',
+      id: d.id,
+      tags: d.tags || [],
+      fullContent: d.content // Para vista previa
+    }));
+
+    return results;
   }
 };
 // End of DataService - Forced Update
