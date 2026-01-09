@@ -31,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, isMobileOpe
   const menuItems = [
     { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
     { id: 'canal', label: 'Academia', icon: Play, badge: 'PROX' }, // [FIX] Retaliing
-    { id: 'cases', label: 'Mis Casos', icon: Briefcase },
+    // 'cases' removed
     { id: 'search', label: 'Buscador', icon: Search },
     { id: 'jurisprusdencia', label: 'Jurisprudencia', icon: BookOpen, badge: 'NUEVO' }, // [FIX] Renamed
     { id: 'library', label: 'Biblioteca', icon: Library },

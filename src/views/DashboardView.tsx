@@ -40,36 +40,33 @@ export const DashboardView = ({ user, events, quests, onChangeView, searchQuery,
                                     Tu reputación está en <span className="font-bold text-white">{user.reputation} puntos</span>.
                                 </p>
                             </div>
-                            {/* [NEW] Search Bar in Dashboard */}
-                            <div className="relative w-full md:w-72 group text-slate-800" data-toga-help="dashboard-search">
-                                <input
-                                    type="text"
-                                    placeholder="Buscar..."
-                                    className="w-full pl-9 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:bg-white focus:text-slate-900 text-white placeholder-blue-200 transition-all backdrop-blur-sm"
-                                    value={searchQuery}
-                                    onChange={(e) => onSearch(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && onChangeView('search')}
-                                />
-                                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-100 w-4 h-4 pointer-events-none group-focus-within:text-slate-400" />
-                            </div>
+                            <div className="hidden md:block"></div> {/* Spacer for layout balance */}
                         </div>
-                        <div className="flex flex-wrap gap-4">
-                            <Button onClick={() => onChangeView('drafter')} className="bg-white !text-blue-700 hover:bg-blue-50 border-none shadow-md font-bold">
+                        <div className="flex flex-col sm:flex-row gap-4 mt-6">
+                            <Button onClick={() => onChangeView('drafter')} className="bg-white !text-blue-700 hover:bg-blue-50 border-none shadow-md font-bold shrink-0">
                                 <PenTool className="w-4 h-4 mr-2" /> Redactar
                             </Button>
-                            <Button onClick={() => onChangeView('cases')} className="bg-white !text-blue-700 hover:bg-blue-50 border-none shadow-md font-bold">
-                                <Briefcase className="w-4 h-4 mr-2" /> Mis Casos
-                            </Button>
-                            <Button onClick={() => onChangeView('search')} variant="secondary" className="bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-sm">
-                                <SearchIcon className="w-4 h-4 mr-2" /> Investigar
-                            </Button>
+
+                            {/* [MOVED] Search Bar Direct Access */}
+                            <div className="relative flex-1 group text-slate-800" data-toga-help="dashboard-search">
+                                <input
+                                    type="text"
+                                    placeholder="¿Qué quieres investigar hoy? (Ej: Sentencias de tutela...)"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:bg-white focus:text-slate-900 text-white placeholder-blue-100 transition-all backdrop-blur-sm shadow-inner"
+                                    value={searchQuery}
+                                    onChange={(e) => onSearch(e.target.value)}
+                                    autoFocus
+                                    onKeyDown={(e) => e.key === 'Enter' && onChangeView('search')}
+                                />
+                                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-100 w-5 h-5 pointer-events-none group-focus-within:text-slate-500" />
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {[
-                        { label: 'Casos', value: '12', color: 'text-blue-600' },
+                        // Cases stat removed
                         { label: 'Docs', value: '45', color: 'text-purple-600' },
                         { label: 'Audiencias', value: events.length, color: 'text-amber-600' },
                         { label: 'Reputación', value: user.reputation, color: 'text-green-600' },

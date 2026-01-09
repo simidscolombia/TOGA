@@ -14,7 +14,7 @@ import { Menu, Bell, Search as SearchIcon, PenTool, Briefcase } from 'lucide-rea
 import { LandingView } from './views/LandingView';
 import { LoginView } from './views/LoginView';
 import { DashboardView } from './views/DashboardView';
-import { CasesView } from './views/CasesView';
+// CasesView import removed
 import { SearchView } from './views/SearchView';
 import { LibraryView } from './views/LibraryView';
 import { ToolsView } from './views/ToolsView';
@@ -28,7 +28,7 @@ import { AdminView } from './views/AdminView';
 import JurisprudenceView from './views/JurisprudenceView';
 
 // Constantes
-import { MOCK_CASES } from './constants';
+// MOCK_CASES import removed
 
 function App() {
     const [activeView, setActiveViewState] = useState(() => localStorage.getItem('toga_active_view') || 'dashboard');
@@ -82,7 +82,7 @@ function App() {
     const [savedDocs, setSavedDocs] = useState<SavedDocument[]>([]);
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [posts, setPosts] = useState<Post[]>([]);
-    const [cases, setCases] = useState<Case[]>(MOCK_CASES); // Cases for Kanban
+    // cases state removed
     const [loadingData, setLoadingData] = useState(true);
 
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -200,18 +200,18 @@ function App() {
                         localStorage.setItem('toga_user', JSON.stringify(currentUser));
 
                         // 3. Load Related Data (Parallel)
-                        const [d, e, p, q, c] = await Promise.all([
+                        const [d, e, p, q] = await Promise.all([
                             DataService.getDocuments(currentUser.id),
                             DataService.getEvents(currentUser.id),
                             DataService.getPosts(),
-                            DataService.getQuests(),
-                            DataService.getCases(currentUser.id)
+                            DataService.getQuests()
+                            // getCases removed
                         ]);
                         setSavedDocs(d);
                         setEvents(e);
                         setPosts(p);
                         setQuests(q);
-                        setCases(c);
+                        // setCases removed
                     }
                 } else {
                     // No user, maybe load public data like posts
@@ -446,7 +446,7 @@ function App() {
     // [NEW] Quest Navigation
     const handleGoToQuest = (actionId: string) => {
         switch (actionId) {
-            case 'create_case': setActiveView('cases'); break;
+            // create_case removed
             case 'upload_doc': setActiveView('library'); break; // Or tools/drafter depending on flow
             case 'chat_ai': setActiveView('search'); break;
             default: break;
@@ -487,7 +487,7 @@ function App() {
                                 <Menu className="w-5 h-5" />
                             </button>
                             <h2 className="text-lg font-semibold text-slate-800 capitalize">
-                                {activeView === 'drafter' ? 'Redactor IA' : activeView === 'tools' ? 'Herramientas Legales' : activeView === 'cases' ? 'Mis Casos (Kanban)' : activeView === 'canal' ? 'Canal 24/7 (En Vivo)' : activeView}
+                                {activeView === 'drafter' ? 'Redactor IA' : activeView === 'tools' ? 'Herramientas Legales' : activeView === 'canal' ? 'Canal 24/7 (En Vivo)' : activeView}
                             </h2>
                         </div>
 
@@ -522,7 +522,7 @@ function App() {
                                 onGoToQuest={handleGoToQuest}
                             />
                         )}
-                        {activeView === 'cases' && <CasesView cases={cases} setCases={setCases} onAction={handleCompleteQuest} />}
+                        {/* CasesView removed */}
                         {activeView === 'search' && <SearchView initialQuery={searchQuery} showToast={addToast} onSave={handleSaveDocument} onAction={handleCompleteQuest} />}
                         {activeView === 'library' && <LibraryView docs={savedDocs} onOpen={handleOpenDocument} />}
 
