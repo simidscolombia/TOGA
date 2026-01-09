@@ -1,13 +1,20 @@
 import { supabase } from './supabaseClient';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Jurisprudence } from '../types';
+import { Jurisprudence, SavedDocument } from '../types';
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Constants for Gemini Model
 // Use 'gemini-1.0-pro' specific version. gemini-pro alias seems broken for this key.
 const MODEL_NAME = "gemini-1.0-pro";
-console.log("JurisprudenceService initialized with model:", MODEL_NAME);
+// List of models to try in order of preference (Failover Strategy)
+const MODEL_CANDIDATES = [
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-flash-001",
+    "gemini-pro",
+    "gemini-1.0-pro"
+];
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -148,6 +155,92 @@ export const JurisprudenceService = {
             throw new Error(`Error procesando el documento con IA (Key: ${keyUsed}): ` + (error.message || error));
         }
     },
+
+    processJurisprulenceWithGemini: async (
+        docs: SavedDocument[],
+        apiKey: string,
+        onProgress: (current: number, total: number, status: string) => void
+    ) => {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        let savedCount = 0;
+        let skippedCount = 0;
+        const errors: any[] = [];
+
+        // Helper function to try generating content with multiple models
+        const generateWithFailover = async (prompt: string): Promise<string> => {
+            let lastError;
+            for (const modelName of MODEL_CANDIDATES) {
+                try {
+                    console.log(`Trying model: ${modelName}`);
+                    const model = genAI.getGenerativeModel({ model: modelName });
+                    const result = await model.generateContent(prompt);
+                    const response = await result.response;
+                    return response.text();
+                } catch (e: any) {
+                    console.warn(`Model ${modelName} failed:`, e.message);
+                    lastError = e;
+                    // Continue to next model
+                }
+            }
+            throw lastError; // Throw the last error if all failed
+        };
+
+        try {
+            const total = docs.length;
+
+            for (let i = 0; i < total; i++) {
+                const doc = docs[i];
+                // Check if already analyzed
+                // ... (rest of logic same as before, but using generateWithFailover)
+
+                // Let's rewrite the loop body to be safe since I'm replacing a big chunk
+                if (doc.analysis) {
+                    skippedCount++;
+                    onProgress(i + 1, total, `Saltando procesado: ${doc.title}`);
+                    continue;
+                }
+
+                onProgress(i + 1, total, `Analizando: ${doc.title}`);
+
+                const prompt = `Analiza el siguiente texto jurídico Colombiano (Sentencia/Auto/Concepto).
+                
+                TEXTO: "${doc.content.substring(0, 30000)}..."
+                
+                Genera un JSON con esta estructura exacta:
+                {
+                    "summary": "Resumen técnico-jurídico de 1 párrafo",
+                    "facts": ["Hecho relevante 1", "Hecho relevante 2"],
+                    "arguments": ["Argumento de la Corte 1", "Argumento 2"],
+                    "decision": "Decisión final (Resuelve)",
+                    "tags": ["Tema 1", "Tema 2", "Derecho X"]
+                }
+                RESPOND ONLY WITH RAW JSON.`;
+
+                try {
+                    const text = await generateWithFailover(prompt);
+
+                    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const analysis = JSON.parse(cleanText);
+
+                    // Update doc locally (in memory) - In real app, update DB
+                    doc.analysis = analysis;
+                    savedCount++;
+
+                } catch (innerError: any) {
+                    console.error(`Error analyzing doc ${doc.id}:`, innerError);
+                    errors.push({ docId: doc.id, error: innerError.message });
+                }
+            }
+
+            return { saved: savedCount, skipped: skippedCount, errors };
+
+        } catch (error: any) {
+            console.error("Jurisprudence AI Error:", error);
+            const keyUsed = apiKey ? `...${apiKey.slice(-4)}` : 'NONE';
+            throw new Error(`Error fatal AI (Key: ${keyUsed}): ` + (error.message || error));
+        }
+    },
+
 
     // --- Helper: Extract Text ---
     async extractTextFromFile(file: File): Promise<string> {
